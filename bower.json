@@ -1,0 +1,32 @@
+{
+  "name": "cherrytree-for-knockout",
+  "version": "0.0.1",
+  "homepage": "https://github.com/nathanboktae/cherrytree-for-knockout",
+  "authors": [
+    "Nathan Black <nathan@nathanblack.org>"
+  ],
+  "description": "Use knockout components with CherryTree hiearchial routing",
+  "main": "cherrytree-for-knockout.js",
+  "moduleType": [
+    "amd",
+    "globals",
+    "node"
+  ],
+  "keywords": [
+    "knockout",
+    "cherrytree",
+    "routes",
+    "components",
+    "web-components",
+    "routing",
+    "angular-ui-router"
+  ],
+  "license": "ISC",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}

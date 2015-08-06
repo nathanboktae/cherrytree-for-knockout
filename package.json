@@ -1,0 +1,28 @@
+{
+  "name": "cherrytree-for-knockout",
+  "version": "0.0.1",
+  "description": "Use knockout components with CherryTree hiearchial routing",
+  "main": "cherrytree-for-knockout.js",
+  "scripts": {
+    "test": "mocha-phantomjs test/tests.html"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nathanboktae/cherrytree-for-knockout.git"
+  },
+  "keywords": [
+    "knockout",
+    "cherrytree",
+    "routes",
+    "routing",
+    "components",
+    "web-components",
+    "angular-ui-router"
+  ],
+  "author": "Nathan Black <nathan@nathanblack.org>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nathanboktae/cherrytree-for-knockout/issues"
+  },
+  "homepage": "https://github.com/nathanboktae/cherrytree-for-knockout#readme"
+}
