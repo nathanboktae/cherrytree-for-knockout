@@ -24,5 +24,20 @@
   "bugs": {
     "url": "https://github.com/nathanboktae/cherrytree-for-knockout/issues"
   },
-  "homepage": "https://github.com/nathanboktae/cherrytree-for-knockout#readme"
+  "homepage": "https://github.com/nathanboktae/cherrytree-for-knockout#readme",
+  "peerDependencies": {
+    "knockout": "^3.3.0"
+  },
+  "devDependencies": {
+    "chai": "^3.2.0",
+    "chai-jquery": "^2.0.0",
+    "cherrytree": "^0.7.0",
+    "jquery": "^2.1.4",
+    "knockout": "^3.3.0",
+    "mocha": "^2.2.5",
+    "mocha-phantomjs": "^3.6.0",
+    "phantomjs": "^1.9.7-15",
+    "sinonjs": "git://github.com/blittle/sinon.js.git#v1.12.2",
+    "cherrytree": "git://github.com/QubitProducts/cherrytree.git#master"
+  }
 }

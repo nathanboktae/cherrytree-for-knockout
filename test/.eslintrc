@@ -1,0 +1,12 @@
+{
+	"env": {
+    "mocha": true
+  },
+  "globals": {
+    "$": true,
+    "ko": true,
+    "cherrytree": true,
+    "should": true,
+    "sinon": true
+  }
+}

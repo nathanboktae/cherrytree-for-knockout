@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>cherrytree-for-knockout tests</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!--[if lte IE 8]>
+  <script src="../node_modules/es5-shim/es5-shim.min.js"></script>
+<![endif]-->
+  <link rel="stylesheet" href="../node_modules/mocha/mocha.css">
+</head>
+<body>
+  <script src="../node_modules/mocha/mocha.js"></script>
+  <script src="../node_modules/chai/chai.js"></script>
+  <script src="../node_modules/jquery/dist/jquery.js"></script>
+  <script src="../node_modules/chai-jquery/chai-jquery.js"></script>
+
+  <div id="mocha"></div>
+
+  <script>
+    mocha.ui('bdd')
+    var should = chai.should()
+    chai.config.includeStack = true
+  </script>
+
+  <script src="../node_modules/knockout/build/output/knockout-latest.js"></script>
+  <script src="../node_modules/cherrytree/build/standalone.js"></script>
+  <script src="../cherrytree-for-knockout.js"></script>
+  <script src="tests.js"></script>
+
+  <script>
+    window.onload = function() {
+      mocha.run()
+    }
+  </script>
+</body>
+</html>

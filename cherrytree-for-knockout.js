@@ -32,7 +32,8 @@
       }
 
       if (depth >= activeRoutes().length) {
-        throw new Error('The depth of route bindings (' + depth + ') exceeds current route length of ' + activeRoutes().length)
+        //console.log('The depth of route bindings (' + depth + ') exceeds current route length of ' + activeRoutes().length)
+        //console.dir(activeRoutes())
       }
       ko.utils.domData.set(element, 'route-depth', depth)
       return ko.bindingHandlers.component.init(element, function() {
@@ -52,12 +53,13 @@
       }, allBindings, viewModel, bindingContext)
     }
   }
+  ko.bindingHandlers.routeComponent.prefix = 'route-component:'
 
   return function knockoutCherrytreeMiddleware(transition) {
     activeRoutes(transition.routes.filter(function(route) {
       return route.options && route.options.template
     }).map(function(route) {
-      var compName = route.ancestors.concat([route.name]).join('.')
+      var compName = ko.bindingHandlers.routeComponent.prefix + route.ancestors.concat([route.name]).join('.')
       if (!ko.components.isRegistered(compName)) {
         ko.components.register(compName, route.options)
       }
