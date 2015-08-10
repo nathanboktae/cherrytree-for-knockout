@@ -23,37 +23,28 @@
   })
 
   ko.bindingHandlers.routeComponent = {
-    init: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
-      var depth = 0
-      for (var i = 0; i < bindingContext.$parents.length; i++) {
-        if ('$route' in bindingContext.$parents[i]) {
-          depth++
-        }
-      }
-
-      if (depth >= activeRoutes().length) {
-        //console.log('The depth of route bindings (' + depth + ') exceeds current route length of ' + activeRoutes().length)
-        //console.dir(activeRoutes())
-      }
-      ko.utils.domData.set(element, 'route-depth', depth)
-      return ko.bindingHandlers.component.init(element, function() {
-        return { name: typeof activeRoutes()[depth] === 'string' ? activeRoutes()[depth] : 'route-blank' }
-      }, allBindings, viewModel, bindingContext)
+    init: function() {
+      return { controlsDescendantBindings: true }
     },
     update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
-      return ko.bindingHandlers.component.init(element, function() {
-        var depth = ko.utils.domData.get(element, 'route-depth')
-        if (typeof depth !== 'number') {
-          if (typeof console !== 'undefined' && typeof console.dir === 'function') {
-            console.dir(element)
-          }
-          throw new Error('No route-depth data found on update')
+      var depth = 0, contextIter = bindingContext.$parentContext
+      while (contextIter) {
+        if ('$route' in contextIter) {
+          depth++
         }
-        return { name: typeof activeRoutes()[depth] === 'string' ? activeRoutes()[depth] : 'route-loading' }
+        contextIter = contextIter.$parentContext
+      }
+
+      var route = activeRoutes()[depth] || { name: 'route-blank' }
+
+      bindingContext.$route = route
+
+      return ko.bindingHandlers.component.init(element, function() {
+        return { name: route.name }
       }, allBindings, viewModel, bindingContext)
     }
   }
-  ko.bindingHandlers.routeComponent.prefix = 'route-component:'
+  ko.bindingHandlers.routeComponent.prefix = 'route:'
 
   return function knockoutCherrytreeMiddleware(transition) {
     activeRoutes(transition.routes.filter(function(route) {
@@ -63,7 +54,11 @@
       if (!ko.components.isRegistered(compName)) {
         ko.components.register(compName, route.options)
       }
-      return compName
+      return {
+        name: compName,
+        params: transition.params,
+        query: transition.query
+      }
     }))
     // return Promise.all(compNamesOrPromises.filter(function(i) { return typeof i !== 'string' }))
   }
