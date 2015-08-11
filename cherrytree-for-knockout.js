@@ -57,49 +57,40 @@
     console.log('transition: ' + transition.routes.map(function(r) { return r.name }).join(', '))
     console.log('query: ' + JSON.stringify(transition.query))
 
-    activeRoutes([])
-    return transition.routes.filter(function(route) {
+    var resolutions = {}, routeResolvers = []
+    activeRoutes(transition.routes.filter(function(route) {
       return route.options && route.options.template
     }).map(function(route) {
-      return function(parentRoute) {
-        var routeData = {
-          name: ko.bindingHandlers.routeComponent.prefix + route.ancestors.concat([route.name]).join('.'),
-          params: transition.params,
-          query: transition.query,
-          resolutions: parentRoute && parentRoute.resolutions
-        }
-        if (!ko.components.isRegistered(routeData.name)) {
-          ko.components.register(routeData.name, route.options)
-        }
+      var routeData = {
+        name: ko.bindingHandlers.routeComponent.prefix + route.ancestors.concat([route.name]).join('.'),
+        params: transition.params,
+        query: transition.query,
+        resolutions: route.options.resolve && ko.observable()
+      }
+      if (!ko.components.isRegistered(routeData.name)) {
+        ko.components.register(routeData.name, route.options)
+      }
 
-        console.log('resolving route ' + routeData.name)
-        if (route.options.resolve) {
-          var resolvers = Object.keys(route.options.resolve)
+      if (route.options.resolve) {
+        var resolvers = Object.keys(route.options.resolve)
 
-          routeData.resolutions = ko.observable()
-          activeRoutes.push(routeData)
-          console.log('routes after push: ' + activeRoutes.peek().map(function(r) { return r.name }).join(', '))
-
+        routeResolvers.push(function() {
           return Promise.all(resolvers.map(function(resolver) {
-            return route.options.resolve[resolver](transition, ko.utils.unwrapObservable(parentRoute && parentRoute.resolutions))
-          })).then(function(resolutions) {
-            routeData.resolutions(resolutions.reduce(function(all, r, idx) {
+            return route.options.resolve[resolver](transition, resolutions)
+          })).then(function(moreResolutions) {
+            routeData.resolutions(moreResolutions.reduce(function(all, r, idx) {
               all[resolvers[idx]] = r
               return all
-            }, ko.utils.unwrapObservable(parentRoute && parentRoute.resolutions) || {}))
+            }, resolutions))
             return routeData
           })
-        } else {
-          activeRoutes.push(routeData)
-          return routeData
-        }
+        })
       }
-    }).reduce(function(promise, then) {
-      if (!promise) {
-        var val = then()
-        return typeof val.then === 'function' ? val : Promise.resolve(val)
-      }
-      return promise.then(then)
+      return routeData
+    }))
+
+    return routeResolvers.reduce(function(promise, then) {
+      return promise ? promise.then(then) : then()
     }, null)
   }
 })
