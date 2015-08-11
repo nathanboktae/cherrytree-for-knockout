@@ -199,22 +199,25 @@ describe('CherryTree for Knockout', function() {
   </ul>\
 </section>'
 
+      if (ko.components.isRegistered('route:forums')) {
+        ko.components.unregister('route:forums')
+      }
       if (ko.components.isRegistered('route:forums.threads.thread')) {
         ko.components.unregister('route:forums.threads.thread')
-        ko.components.register('route:forums.threads.thread', forum)
       }
     })
 
     it('should call a resolve function during route middleware resolution and block the route transition until it resolves', function(done) {
       window.location.hash = 'forums'
-      forums.resolve.should.have.been.calledOnce
-
       waitFor('route-loading', function() {
+        forums.resolve.forums.should.have.been.calledOnce.mmmkay
+        forums.resolve.forums.firstCall.args[0].should.contain.keys(['params', 'query', 'path', 'routes'])
+
         $test.find('section.forums').should.not.exist
         forumsDeferred.resolve([{ id: 1, name: 'Home forum' }])
 
         waitFor('forums', function() {
-          forums.resolve.should.have.been.calledOnce
+          forums.resolve.forums.should.have.been.calledOnce
           $test.find('section.forums').should.exist
           $test.find('.route-loading').should.not.exist
         }, done)
@@ -224,14 +227,13 @@ describe('CherryTree for Knockout', function() {
     it('can have the loading component replaced by a custom component', function(done) {
       ko.components.unregister('route-loading')
       ko.components.register('route-loading', {
-        template: '<blink class="route-loading">loading!!!</blink>',
-        synchronous: true
+        template: '<blink class="route-loading">loading!!!</blink>'
       })
 
       router.map(function(route) {
         route('messages', {
           resolve: {
-            messages: function() { return [] }
+            messages: function() { return Promise.defer().promise }
           },
           template: '<div class="mesasges"></div>'
         })
@@ -245,10 +247,11 @@ describe('CherryTree for Knockout', function() {
 
     it('should resolve nested components in order', function(done) {
       window.location.hash = 'forums/1/threads/2'
-      forums.resolve.should.have.been.calledOnce
-      thread.resolve.should.have.not.been.called
 
       waitFor('route-loading', function() {
+        forums.resolve.forums.should.have.been.calledOnce
+        thread.resolve.threads.should.have.not.been.called
+
         $test.find('section.forums').should.not.exist
         $test.find('section.thread').should.not.exist
         forumsDeferred.resolve([{
@@ -262,7 +265,15 @@ describe('CherryTree for Knockout', function() {
           waitFor('route-loading', function() {
             $test.find('section.forums .route-loading').should.exist
             $test.find('section.thread').should.not.exist
-            thread.resolve.should.have.been.calledOnce
+            thread.resolve.threads.should.have.been.calledOnce
+            thread.resolve.threads.firstCall.args[1].should.deep.equal({
+              forums: [{
+                name: 'Home forum'
+              }, {
+                name: 'Water Cooler'
+              }]
+            })
+
             threadsDeferred.resolve([{
               title: 'first thread'
             }, {
@@ -270,7 +281,7 @@ describe('CherryTree for Knockout', function() {
             }])
 
             waitFor('thread', function() {
-              thread.resolve.should.have.been.calledOnce
+              thread.resolve.threads.should.have.been.calledOnce
               $test.find('section.forums').should.exist
               $test.find('section.forums .route-loading').should.not.exist
 
@@ -284,7 +295,5 @@ describe('CherryTree for Knockout', function() {
         }, done, true)
       }, done, true)
     })
-
-    it('should not block route transition if the return result is not a promise')
   })
 })
