@@ -36,7 +36,6 @@
       }
 
       var route = activeRoutes()[depth] || { name: 'route-blank' }
-      console.log('routeComponent at depth ' + depth + ' updating to ' + route.name)
 
       bindingContext.$route = route
 
@@ -54,9 +53,6 @@
   ko.bindingHandlers.routeComponent.prefix = 'route:'
 
   return function knockoutCherrytreeMiddleware(transition) {
-    console.log('transition: ' + transition.routes.map(function(r) { return r.name }).join(', '))
-    console.log('query: ' + JSON.stringify(transition.query))
-
     var resolutions = {}, routeResolvers = []
     activeRoutes(transition.routes.filter(function(route) {
       return route.options && route.options.template
