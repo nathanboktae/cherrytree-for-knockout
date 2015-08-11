@@ -165,8 +165,15 @@ describe('CherryTree for Knockout', function() {
   describe('resolve', function() {
     var forumsDeferred, threadsDeferred
     beforeEach(function() {
-      forumsDeferred = Promise.defer()
-      threadsDeferred = Promise.defer()
+      function defer() {
+          var d = {}
+          d.promise = new Promise(function(resolve) {
+              d.resolve = resolve
+          })
+          return d
+      }
+      forumsDeferred = defer()
+      threadsDeferred = defer()
 
       forums.resolve = {
         forums: sinon.spy(function() {
