@@ -35,17 +35,25 @@
         contextIter = contextIter.$parentContext
       }
 
-      var route = activeRoutes()[depth] || { name: 'route-blank' }
+      var route = activeRoutes()[depth] || { name: 'route-blank', resolutions: function(){ return {} } }
 
       bindingContext.$route = route
 
       return ko.bindingHandlers.component.init(element, function() {
-        if (route.resolutions) {
-          return route.resolutions() ?
-            { name: route.name, params: route.resolutions() } :
-            { name: 'route-loading' }
+        var res = route.resolutions()
+        if (res) {
+          var clone = {}
+          Object.keys(res).forEach(function(key) {
+            clone[key] = res[key]
+          })
+          clone.$route = {
+            name: route.name,
+            query: route.query,
+            params: route.params
+          }
+          return { name: route.name, params: clone }
         } else {
-          return { name: route.name }
+          return { name: 'route-loading' }
         }
       }, allBindings, viewModel, bindingContext)
     }
@@ -54,36 +62,41 @@
 
   return function knockoutCherrytreeMiddleware(transition) {
     var resolutions = {}, routeResolvers = []
-    activeRoutes(transition.routes.filter(function(route) {
-      return route.options && route.options.template
-    }).map(function(route) {
-      var routeData = {
-        name: ko.bindingHandlers.routeComponent.prefix + route.ancestors.concat([route.name]).join('.'),
-        params: transition.params,
-        query: transition.query,
-        resolutions: route.options.resolve && ko.observable()
-      }
-      if (!ko.components.isRegistered(routeData.name)) {
-        ko.components.register(routeData.name, route.options)
+    activeRoutes(transition.routes.map(function(route) {
+      var routeData
+      if (route.options && route.options.template) {
+        routeData = {
+          name: ko.bindingHandlers.routeComponent.prefix + route.ancestors.concat([route.name]).join('.'),
+          params: transition.params,
+          query: transition.query,
+          resolutions: ko.observable()
+        }
+        if (!ko.components.isRegistered(routeData.name)) {
+          ko.components.register(routeData.name, route.options)
+        }
       }
 
-      if (route.options.resolve) {
-        var resolvers = Object.keys(route.options.resolve)
+      var resolve = route.options && route.options.resolve
+      if (resolve || routeResolvers.length) {
+        var resolvers = Object.keys(resolve || {})
 
         routeResolvers.push(function() {
           return Promise.all(resolvers.map(function(resolver) {
             return route.options.resolve[resolver](transition, resolutions)
           })).then(function(moreResolutions) {
-            routeData.resolutions(moreResolutions.reduce(function(all, r, idx) {
+            moreResolutions.reduce(function(all, r, idx) {
               all[resolvers[idx]] = r
               return all
-            }, resolutions))
+            }, resolutions)
+            routeData && routeData.resolutions(resolutions)
             return routeData
           })
         })
+      } else if (routeData) {
+        routeData.resolutions(resolutions)
       }
       return routeData
-    }))
+    }).filter(function(i) { return !!i }))
 
     return routeResolvers.reduce(function(promise, then) {
       return promise ? promise.then(then) : then()

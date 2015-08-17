@@ -64,7 +64,6 @@ describe('CherryTree for Knockout', function() {
     $test.find('section').should.not.exist
   })
   afterEach(function() {
-    console.log($test[0])
     observers.forEach(function(o) {
       o.disconnect()
     })
@@ -76,7 +75,6 @@ describe('CherryTree for Knockout', function() {
   })
 
   function waitFor(klass, cb, done, onlyOnFail) {
-    console.log('waiting for .' + klass + ' ...')
     var observer = new MutationObserver(function(mutations) {
       for (var i = 0; i < mutations.length; i++) {
         // jQuery causes muations with .find, so we can't use it
@@ -164,14 +162,15 @@ describe('CherryTree for Knockout', function() {
 
   describe('resolve', function() {
     var forumsDeferred, threadsDeferred
+    function defer() {
+        var d = {}
+        d.promise = new Promise(function(resolve) {
+            d.resolve = resolve
+        })
+        return d
+    }
+
     beforeEach(function() {
-      function defer() {
-          var d = {}
-          d.promise = new Promise(function(resolve) {
-              d.resolve = resolve
-          })
-          return d
-      }
       forumsDeferred = defer()
       threadsDeferred = defer()
 
@@ -192,6 +191,7 @@ describe('CherryTree for Knockout', function() {
       }
       thread.viewModel = {
         createViewModel: function(params) {
+          params.$route.should.contain.keys(['query', 'params'])
           return {
             title: 'Viewing threads for forum ' + params.forum.name,
             threads: params.threads
@@ -240,7 +240,7 @@ describe('CherryTree for Knockout', function() {
       router.map(function(route) {
         route('messages', {
           resolve: {
-            messages: function() { return Promise.defer().promise }
+            messages: function() { return defer().promise }
           },
           template: '<div class="mesasges"></div>'
         })
@@ -250,6 +250,29 @@ describe('CherryTree for Knockout', function() {
       waitFor('route-loading', function() {
         $test.find('blink').should.exist.and.have.text('loading!!!')
       }, done)
+    })
+
+    it('should provide the route as a param even with no resolve functions', function(done) {
+      router.map(function(route) {
+        route('email-campaign', {
+          path: 'email-campaign/:campaign/create',
+          template: '<div class="campaign"></div>',
+          viewModel: {
+            createViewModel: function(params) {
+              try {
+                params.$route.params.campaign.should.equal('v2launch')
+                params.$route.query.should.deep.equal({ title: 'Check out our new version!' })
+                setTimeout(done, 1)
+              } catch (e) {
+                done(e)
+              }
+              return {}
+            }
+          }
+        })
+      })
+
+      window.location.hash = '/email-campaign/v2launch/create?title=Check%20out%20our%20new%20version!'
     })
 
     it('should resolve nested components in order', function(done) {
@@ -273,6 +296,10 @@ describe('CherryTree for Knockout', function() {
             $test.find('section.forums .route-loading').should.exist
             $test.find('section.thread').should.not.exist
             thread.resolve.threads.should.have.been.calledOnce
+            thread.resolve.threads.firstCall.args[0].params.should.deep.equal({
+              forumId: '1',
+              threadId: '2'
+            })
             thread.resolve.threads.firstCall.args[1].should.deep.equal({
               forums: [{
                 name: 'Home forum'
@@ -301,6 +328,52 @@ describe('CherryTree for Knockout', function() {
           }, done, true)
         }, done, true)
       }, done, true)
+    })
+
+    it('should resolve items in routes without components', function(done) {
+      var
+        accountDeferrred = defer(),
+        orderHistoryDeferred = defer(),
+        profileViewModel = sinon.spy(function() {
+          return {}
+        }),
+        orderHistoryViewModel = sinon.spy(function() {
+          return {}
+        })
+
+      router.map(function(route) {
+        route('account', {
+          resolve: {
+            account: function() {
+              return accountDeferrred.promise
+            }
+          }
+        }, function() {
+          route('profile', {
+            path: '/profile',
+            viewModel: {
+              createViewModel: profileViewModel
+            },
+            template: '<div class="profile"></div>'
+          })
+          route('order-history', {
+            resolve: {
+              orderHistory: function() { return orderHistoryDeferred.promise }
+            },
+            viewModel: {
+              createViewModel: orderHistoryViewModel
+            },
+            template: '<div class="order-history"></div>'
+          })
+        })
+      })
+
+      window.location.hash = 'profile'
+      accountDeferrred.resolve({ name: 'Bob' })
+      waitFor('profile', function() {
+        profileViewModel.should.have.been.calledOnce
+        profileViewModel.firstCall.args[0].account.should.deep.equal({ name: 'Bob' })
+      }, done)
     })
   })
 })
