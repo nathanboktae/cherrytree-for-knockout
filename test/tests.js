@@ -1,5 +1,5 @@
 describe('CherryTree for Knockout', function() {
-  var router, $test, forums, forum, thread, login,
+  var router, $test, forums, forum, thread, login, hrefTest, goToRoute,
   observers = [],
   location = new cherrytree.HistoryLocation()
 
@@ -33,25 +33,39 @@ describe('CherryTree for Knockout', function() {
 
     thread = {
       path: 'threads/:threadId',
-      template: '<section class="thread"><h4 data-bind="text: title.replace(\'{0}\', $route.params.threadId)"></h4><p data-bind="text: JSON.stringify($route)"></p></section>',
+      template: '<section class="thread">\
+        <h4><a data-bind="text: title.replace(\'{0}\', $route.params.threadId), routeHref: \'forumItem\'"></a></h4>\
+        <p data-bind="text: JSON.stringify($route)"></p></section>',
       viewModel: function() {
         this.title = 'Viewing thread {0}'
       },
       synchronous: true
     }
 
+    hrefTest = {
+      synchronous: true,
+      path: 'href-test/:someparam',
+      viewModel: function() {
+        return { goToRoute: goToRoute }
+      },
+      template: '<nav class="href-test">\
+          <a data-bind="routeHref: goToRoute"></a>\
+        </nav>'
+    }
+
     router.map(function(route) {
       route('login', login)
-      route('forumList', forums)
+      route('forums.index', forums)
       route('forums', forums, function() {
         route('forumItem', forum)
         route('threads', forum, function() {
           route('thread', thread)
         })
       })
+      route('router-href-test', hrefTest)
     })
 
-    $test = $('<div data-bind="routeComponent: true"></div>')
+    $test = $('<div data-bind="routeComponent: router"></div>')
     // flush the activeRoutes() that are in the closure from previous tests
     ko.bindingHandlers.routeComponent.middleware({
       routes: [],
@@ -59,7 +73,7 @@ describe('CherryTree for Knockout', function() {
       query: {}
     })
 
-    ko.applyBindings({}, $test[0])
+    ko.applyBindings({ router: router }, $test[0])
     router.listen(location)
     $test.find('section').should.not.exist
   })
@@ -160,6 +174,46 @@ describe('CherryTree for Knockout', function() {
     }, done)
   })
 
+  describe('routeHref', function() {
+    beforeEach(function(done) {
+      goToRoute = ko.observable({ name: 'login' })
+
+      window.location.hash = 'href-test/foobar'
+      waitFor('href-test', function() {}, done)
+    })
+
+    it('should render a href given only the route name, if the route needs no params', function() {
+      $test.find('.href-test a').should.have.attr('href', '#login')
+    })
+
+    it('should render a href given the route name and params', function() {
+      goToRoute({
+        name: 'thread',
+        params: {
+          forumId: 2,
+          threadId: 3
+        }
+      })
+      $test.find('.href-test a').should.have.attr('href', '#forums/2/threads/3')
+    })
+
+    it('should default to the same route name if given only params', function() {
+      goToRoute({
+        params: {
+          someparam: 'baz'
+        }
+      })
+      $test.find('.href-test a').should.have.attr('href', '#href-test/baz')
+    })
+
+    it('should accept just a string to use as the route name', function(done) {
+      window.location.hash = 'forums/1/threads/2'
+      waitFor('thread', function() {
+        $test.find('section.thread h4 a').should.have.attr('href', '#forums/1')
+      }, done)
+    })
+  })
+
   describe('resolve', function() {
     var forumsDeferred, threadsDeferred
     function defer() {
@@ -199,12 +253,12 @@ describe('CherryTree for Knockout', function() {
         }
       }
       thread.template = '\
-<section class="thread">\
-  <h4 data-bind="text: title"></h4>\
-  <ul data-bind="foreach: threads">\
-    <li data-bind="text: title"></li>\
-  </ul>\
-</section>'
+        <section class="thread">\
+          <h4 data-bind="text: title"></h4>\
+          <ul data-bind="foreach: threads">\
+            <li data-bind="text: title"></li>\
+          </ul>\
+        </section>'
 
       if (ko.components.isRegistered('route:forums')) {
         ko.components.unregister('route:forums')

@@ -38,6 +38,13 @@
       var route = activeRoutes()[depth] || { name: 'route-blank', resolutions: function(){ return {} } }
       bindingContext.$route = route
 
+      var router = valueAccessor()
+      if (router && typeof router.map === 'function' && typeof router.use === 'function') {
+        if (!bindingContext.$root.$router) {
+          bindingContext.$root.$router = router
+        }
+      }
+
       function clone(obj) {
         return Object.keys(obj).reduce(function(clone, key) {
           clone[key] = obj[key]
@@ -59,6 +66,31 @@
     }
   }
   ko.bindingHandlers.routeComponent.prefix = 'route:'
+
+  ko.bindingHandlers.routeHref = {
+    update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
+      var router = bindingContext.$root.$router
+      if (!router) {
+        throw new Error('No router found on the root binding context. Make sure to initialize the toplevel routeComponent with your router as the option.')
+      }
+
+      return ko.bindingHandlers.attr.update(element, function() {
+        var opts = ko.utils.unwrapObservable(valueAccessor()) || {}, name, params
+        if (typeof opts === 'string') {
+          name = opts
+        } else {
+          name = ko.utils.unwrapObservable(opts.name)
+          params = ko.utils.unwrapObservable(opts.params)
+        }
+
+        return {
+          href: router.generate(
+            name || router.state.routes[router.state.routes.length - 1].name,
+            params || router.state.params)
+        }
+      }, allBindings, viewModel, bindingContext)
+    }
+  }
 
   return function knockoutCherrytreeMiddleware(transition) {
     var resolutions = {}, routeResolvers = []
