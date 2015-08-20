@@ -36,22 +36,22 @@
       }
 
       var route = activeRoutes()[depth] || { name: 'route-blank', resolutions: function(){ return {} } }
-
       bindingContext.$route = route
+
+      function clone(obj) {
+        return Object.keys(obj).reduce(function(clone, key) {
+          clone[key] = obj[key]
+          return clone
+        }, {})
+      }
 
       return ko.bindingHandlers.component.init(element, function() {
         var res = route.resolutions()
         if (res) {
-          var clone = {}
-          Object.keys(res).forEach(function(key) {
-            clone[key] = res[key]
-          })
-          clone.$route = {
-            name: route.name,
-            query: route.query,
-            params: route.params
-          }
-          return { name: route.name, params: clone }
+          var params = clone(res)
+          params.$route = clone(route)
+          delete params.$route.resolutions
+          return { name: route.name, params: params }
         } else {
           return { name: 'route-loading' }
         }
@@ -69,7 +69,8 @@
           name: ko.bindingHandlers.routeComponent.prefix + route.ancestors.concat([route.name]).join('.'),
           params: transition.params,
           query: transition.query,
-          resolutions: ko.observable()
+          resolutions: ko.observable(),
+          transitionTo: transition.redirectTo
         }
         if (!ko.components.isRegistered(routeData.name)) {
           ko.components.register(routeData.name, route.options)

@@ -191,7 +191,7 @@ describe('CherryTree for Knockout', function() {
       }
       thread.viewModel = {
         createViewModel: function(params) {
-          params.$route.should.contain.keys(['query', 'params'])
+          params.$route.should.contain.keys(['query', 'params', 'transitionTo'])
           return {
             title: 'Viewing threads for forum ' + params.forum.name,
             threads: params.threads
