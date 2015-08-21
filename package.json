@@ -39,9 +39,7 @@
     "jquery": "^2.1.4",
     "knockout": "^3.3.0",
     "mocha": "^2.2.5",
-    "mocha-phantomjs": "^3.6.0",
     "mutationobserver-shim": "^0.3.1",
-    "phantomjs": "^1.9.7-15",
     "sinon": "^1.15.4",
     "sinon-chai": "^2.8.0"
   }
