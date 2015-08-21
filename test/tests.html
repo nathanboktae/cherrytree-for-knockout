@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="../node_modules/mocha/mocha.css">
 </head>
 <body>
+  <script src="../node_modules/MutationObserver-shim/dist/mutationobserver.min.js"></script>
   <script src="../node_modules/mocha/mocha.js"></script>
   <script src="../node_modules/chai/chai.js"></script>
   <script src="../node_modules/jquery/dist/jquery.js"></script>
@@ -33,7 +34,34 @@
 
   <script>
     window.onload = function() {
-      mocha.run()
+      var runner = mocha.run(),
+          tests = []
+      runner.on('end', function(){
+        window.global_test_results = {
+          passed: runner.stats.passes,
+          failed: runner.stats.failures,
+          total: runner.stats.tests,
+          duration: runner.stats.duration,
+          tests: tests
+        }
+      })
+
+      runner.on('pass', function(test) {
+        tests.push({
+          name: test.fullTitle(),
+          result: true,
+          message: test.duration + 'ms'
+        })
+      })
+
+      runner.on('fail', function (test, err) {
+        tests.push({
+          name: test.fullTitle(),
+          result: false,
+          duration: test.duration,
+          message: (err.message || '<no message>') + ': ' + err.stack
+        })
+      })
     }
   </script>
 </body>
