@@ -7,7 +7,7 @@
   } else {
     /*global ko*/
     var middleware = factory(ko)
-    ko.bindingHandlers.routeComponent.middleware = middleware
+    ko.bindingHandlers.routeView.middleware = middleware
   }
 })(function(ko) {
   var activeRoutes = ko.observableArray()
@@ -22,7 +22,7 @@
     template: '<div class="route-loading"></div>'
   })
 
-  ko.bindingHandlers.routeComponent = {
+  ko.bindingHandlers.routeView = {
     init: function() {
       return { controlsDescendantBindings: true }
     },
@@ -65,13 +65,13 @@
       }, allBindings, viewModel, bindingContext)
     }
   }
-  ko.bindingHandlers.routeComponent.prefix = 'route:'
+  ko.bindingHandlers.routeView.prefix = 'route:'
 
   ko.bindingHandlers.routeHref = {
     update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
       var router = bindingContext.$root.$router
       if (!router) {
-        throw new Error('No router found on the root binding context. Make sure to initialize the toplevel routeComponent with your router as the option.')
+        throw new Error('No router found on the root binding context. Make sure to initialize the toplevel routeView with your router as the option.')
       }
 
       return ko.bindingHandlers.attr.update(element, function() {
@@ -98,7 +98,7 @@
       var routeData
       if (route.options && route.options.template) {
         routeData = {
-          name: ko.bindingHandlers.routeComponent.prefix + route.ancestors.concat([route.name]).join('.'),
+          name: ko.bindingHandlers.routeView.prefix + route.ancestors.concat([route.name]).join('.'),
           params: transition.params,
           query: transition.query,
           resolutions: ko.observable(),

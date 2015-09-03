@@ -5,7 +5,7 @@ describe('CherryTree for Knockout', function() {
 
   beforeEach(function() {
     router = new cherrytree()
-    router.use(ko.bindingHandlers.routeComponent.middleware)
+    router.use(ko.bindingHandlers.routeView.middleware)
 
     login = {
       template: '<section class="login"><h1 data-bind="text: title"></h1></section>',
@@ -17,14 +17,14 @@ describe('CherryTree for Knockout', function() {
 
     forums = {
       path: 'forums',
-      template: '<section class="forums"><h1>Viewing all forums</h1><div data-bind="routeComponent: true"></div></section>',
+      template: '<section class="forums"><h1>Viewing all forums</h1><div data-bind="routeView: true"></div></section>',
       viewModel: function() {},
       synchronous: true
     }
 
     forum = {
       path: ':forumId',
-      template: '<section class="forum"><h2 data-bind="text: title.replace(\'{0}\', $route.params.forumId)"></h2><div data-bind="routeComponent: true"></div></section>',
+      template: '<section class="forum"><h2 data-bind="text: title.replace(\'{0}\', $route.params.forumId)"></h2><div data-bind="routeView: true"></div></section>',
       viewModel: function() {
         this.title = 'Viewing forum {0}'
       },
@@ -65,9 +65,9 @@ describe('CherryTree for Knockout', function() {
       route('router-href-test', hrefTest)
     })
 
-    $test = $('<div data-bind="routeComponent: router"></div>')
+    $test = $('<div data-bind="routeView: router"></div>')
     // flush the activeRoutes() that are in the closure from previous tests
-    ko.bindingHandlers.routeComponent.middleware({
+    ko.bindingHandlers.routeView.middleware({
       routes: [],
       params: {},
       query: {}
