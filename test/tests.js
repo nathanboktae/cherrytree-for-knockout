@@ -174,6 +174,15 @@ describe('CherryTree for Knockout', function() {
     }, done)
   })
 
+  it('should back router.state with an observable', function(done) {
+    window.location.hash = 'forums/1'
+    waitFor('forum', function() {
+      var stateProp = Object.getOwnPropertyDescriptor(router, 'state')
+      ko.isObservable(stateProp.get).should.be.true
+      ko.isObservable(stateProp.set).should.be.true
+    }, done)
+  })
+
   describe('routeHref', function() {
     beforeEach(function(done) {
       goToRoute = ko.observable({ name: 'login' })

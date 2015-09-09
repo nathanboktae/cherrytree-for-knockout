@@ -42,6 +42,16 @@
       if (router && typeof router.map === 'function' && typeof router.use === 'function') {
         if (!bindingContext.$root.$router) {
           bindingContext.$root.$router = router
+
+          if (!Object.getOwnPropertyDescriptor(router, 'state').get) {
+            var routeState = ko.observable(router.state)
+            ;delete router.state
+            Object.defineProperty(router, 'state', {
+              get: routeState,
+              set: routeState,
+              enumerable: true
+            })
+          }
         }
       }
 
