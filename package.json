@@ -4,7 +4,7 @@
   "description": "Use knockout components with CherryTree hiearchial routing",
   "main": "cherrytree-for-knockout.js",
   "scripts": {
-    "test": "node -e \"require('grunt').tasks(['test']);\""
+    "test": "mocha-phantomjs tests/tests.html && (node -e \"require('grunt').tasks(['test']);\" || true)"
   },
   "repository": {
     "type": "git",
@@ -40,6 +40,8 @@
     "jquery": "^2.1.4",
     "knockout": "^3.3.0",
     "mocha": "^2.2.5",
+    "mocha-phantomjs": "^3.6.0",
+    "phantomjs": "^1.9.7-15",
     "sinon-browser-only": "^1.12.1",
     "sinon-chai": "^2.8.0"
   }
