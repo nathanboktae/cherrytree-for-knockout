@@ -4,18 +4,15 @@
   <meta charset="utf-8">
   <title>cherrytree-for-knockout tests</title>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<!--[if lte IE 8]>
-  <script src="../node_modules/es5-shim/es5-shim.min.js"></script>
-<![endif]-->
   <link rel="stylesheet" href="../node_modules/mocha/mocha.css">
 </head>
 <body>
-  <script src="../node_modules/MutationObserver-shim/dist/mutationobserver.min.js"></script>
+  <script src="../node_modules/babel-core/browser-polyfill.js"></script>
   <script src="../node_modules/mocha/mocha.js"></script>
   <script src="../node_modules/chai/chai.js"></script>
   <script src="../node_modules/jquery/dist/jquery.js"></script>
   <script src="../node_modules/chai-jquery/chai-jquery.js"></script>
-  <script src="sinon.js"></script>
+  <script src="../node_modules/sinon-browser-only/sinon.js"></script>
   <script src="../node_modules/sinon-chai/lib/sinon-chai.js"></script>
 
   <div id="mocha"></div>
@@ -34,7 +31,7 @@
 
   <script>
     window.onload = function() {
-      var runner = mocha.run(),
+      var runner = (window.mochaPhantomJS || mocha).run(),
           tests = []
       runner.on('end', function(){
         window.global_test_results = {

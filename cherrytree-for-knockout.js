@@ -14,12 +14,14 @@
 
   ko.components.register('route-blank', {
     viewModel: { instance: {} },
-    template: '<div></div>'
+    template: '<div></div>',
+    synchronous: true
   })
 
   ko.components.register('route-loading', {
     viewModel: { instance: {} },
-    template: '<div class="route-loading"></div>'
+    template: '<div class="route-loading"></div>',
+    synchronous: true
   })
 
   ko.bindingHandlers.routeView = {

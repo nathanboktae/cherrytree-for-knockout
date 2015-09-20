@@ -1,6 +1,5 @@
 describe('CherryTree for Knockout', function() {
   var router, $test, forums, forum, thread, login, hrefTest, goToRoute,
-  observers = [],
   location = new cherrytree.HistoryLocation()
 
   beforeEach(function() {
@@ -76,70 +75,66 @@ describe('CherryTree for Knockout', function() {
     ko.applyBindings({ router: router }, $test[0])
     router.listen(location)
     $test.find('section').should.not.exist
+    // return router.state.activeTransition
   })
   afterEach(function() {
-    observers.forEach(function(o) {
-      o.disconnect()
-    })
-    observers = []
     ko.cleanNode($test[0])
     $test.remove()
     window.location.hash = ''
     $test = null
+    // return router.state.activeTransition
   })
 
-  function waitFor(klass, cb, done, onlyOnFail) {
-    var observer = new MutationObserver(function(mutations) {
-      for (var i = 0; i < mutations.length; i++) {
-        // jQuery causes muations with .find, so we can't use it
-        if (mutations[i].target.classList.contains(klass) ||
-            (mutations[i].target.innerHTML || '').indexOf('class="' + klass + '"') >= 0) {
-          try {
-            observer.disconnect()
-            cb()
-            if (!onlyOnFail) done()
-          } catch(e) {
-            done(e)
-          }
-          return
+  function pollUntilPassing(fn) {
+    var resolve, reject, tries = 0
+
+    var attempt = function() {
+      tries++
+      try {
+        fn()
+        resolve()
+      } catch(e) {
+        if (tries < 30) {
+          setTimeout(attempt, 5)
+        } else {
+          reject(e)
         }
       }
+    } 
+    setTimeout(attempt, 2)
+
+    return new Promise(function(r, rj) {
+      resolve = r, reject = rj
     })
-    observer.observe($test[0], {
-      childList: true,
-      subtree: true,
-      attributes: true
-    })
-    observers.push(observer)
   }
 
   it('should render a blank component when no route is active', function() {
     $test.find('section').should.not.exist.mmmkay
   })
 
-  it('should automatically register a component and render it', function(done) {
+  it('should automatically register a component and render it', function() {
     window.location.hash = 'login'
-    waitFor('login', function() {
+    return pollUntilPassing(function() {
       $test.find('section.login h1').should.have.text('please login')
-    }, done)
+    })
   })
 
-  it('should render nested components with route params', function(done) {
+  it('should render nested components with route params', function() {
     window.location.hash = 'forums/1'
-    waitFor('forum', function() {
+    return pollUntilPassing(function() {
       $test.find('section.forums section.forum').should.exist
       $test.find('section.forum h2').should.have.text('Viewing forum 1')
-
+    }).then(function() {
       window.location.hash = 'forums/1/threads/2'
-      waitFor('thread', function() {
+      return pollUntilPassing(function() {
         $test.find('section.forums section.forum section.thread').should.exist
         $test.find('section.forum h2').should.have.text('Viewing forum 1')
         $test.find('section.thread h4').should.have.text('Viewing thread 2')
-      }, done)
-    }, done, true)
+      })
+    })
   })
 
-  it('should not register components already registered', function(done) {
+  it('should not register components already registered', function() {
     ko.components.unregister('route:login')
     ko.components.register('route:login', {
       template: login.template,
@@ -150,15 +145,15 @@ describe('CherryTree for Knockout', function() {
     })
 
     window.location.hash = 'login'
-    waitFor('login', function() {
+    return pollUntilPassing(function() {
       $test.find('section.login').should.exist
       $test.find('section.login h1').should.have.text('The login form!')
-    }, done)
+    })
   })
 
-  it('should expose $route on the bindingContext with the route name at that depth, params, and query', function(done) {
+  it('should expose $route on the bindingContext with the route name at that depth, params, and query', function() {
     window.location.hash = 'forums/1/threads/2?unreadOnly=true'
-    waitFor('thread', function() {
+    return pollUntilPassing(function() {
       $test.find('section.forums section.forum section.thread').should.exist
       $test.find('section.thread p').should.exist
       JSON.parse($test.find('section.thread p').text()).should.deep.equal({
@@ -171,24 +166,26 @@ describe('CherryTree for Knockout', function() {
           unreadOnly: 'true'
         }
       })
-    }, done)
+    })
   })
 
-  it('should back router.state with an observable', function(done) {
+  it('should back router.state with an observable', function() {
     window.location.hash = 'forums/1'
-    waitFor('forum', function() {
+    return pollUntilPassing(function() {
       var stateProp = Object.getOwnPropertyDescriptor(router, 'state')
       ko.isObservable(stateProp.get).should.be.true
       ko.isObservable(stateProp.set).should.be.true
-    }, done)
+    })
   })
 
   describe('routeHref', function() {
-    beforeEach(function(done) {
+    beforeEach(function() {
       goToRoute = ko.observable({ name: 'login' })
 
       window.location.hash = 'href-test/foobar'
-      waitFor('href-test', function() {}, done)
+      return pollUntilPassing(function() {
+        $test[0].querySelector('.href-test').should.exist
+      })
     })
 
     it('should render a href given only the route name, if the route needs no params', function() {
@@ -215,11 +212,11 @@ describe('CherryTree for Knockout', function() {
       $test.find('.href-test a').should.have.attr('href', '#href-test/baz')
     })
 
-    it('should accept just a string to use as the route name', function(done) {
+    it('should accept just a string to use as the route name', function() {
       window.location.hash = 'forums/1/threads/2'
-      waitFor('thread', function() {
+      return pollUntilPassing(function() {
         $test.find('section.thread h4 a').should.have.attr('href', '#forums/1')
-      }, done)
+      })
     })
   })
 
@@ -277,24 +274,24 @@ describe('CherryTree for Knockout', function() {
       }
     })
 
-    it('should call a resolve function during route middleware resolution and block the route transition until it resolves', function(done) {
+    it('should call a resolve function during route middleware resolution and block the route transition until it resolves', function() {
       window.location.hash = 'forums'
-      waitFor('route-loading', function() {
+      return pollUntilPassing(function() {
         forums.resolve.forums.should.have.been.calledOnce.mmmkay
         forums.resolve.forums.firstCall.args[0].should.contain.keys(['params', 'query', 'path', 'routes'])
 
         $test.find('section.forums').should.not.exist
+      }).then(function() {        
         forumsDeferred.resolve([{ id: 1, name: 'Home forum' }])
-
-        waitFor('forums', function() {
+        return pollUntilPassing(function() {
           forums.resolve.forums.should.have.been.calledOnce
           $test.find('section.forums').should.exist
           $test.find('.route-loading').should.not.exist
-        }, done)
-      }, done, true)
+        })
+      })
     })
 
-    it('can have the loading component replaced by a custom component', function(done) {
+    it('can have the loading component replaced by a custom component', function() {
       ko.components.unregister('route-loading')
       ko.components.register('route-loading', {
         template: '<blink class="route-loading">loading!!!</blink>'
@@ -310,9 +307,9 @@ describe('CherryTree for Knockout', function() {
       })
 
       window.location.hash = 'messages'
-      waitFor('route-loading', function() {
+      return pollUntilPassing(function() {
         $test.find('blink').should.exist.and.have.text('loading!!!')
-      }, done)
+      })
     })
 
     it('should provide the route as a param even with no resolve functions', function(done) {
@@ -338,62 +335,60 @@ describe('CherryTree for Knockout', function() {
       window.location.hash = '/email-campaign/v2launch/create?title=Check%20out%20our%20new%20version!'
     })
 
-    it('should resolve nested components in order', function(done) {
+    it('should resolve nested components in order', function() {
       window.location.hash = 'forums/1/threads/2'
 
-      waitFor('route-loading', function() {
+      return pollUntilPassing(function() {
         forums.resolve.forums.should.have.been.calledOnce
         thread.resolve.threads.should.have.not.been.called
 
         $test.find('section.forums').should.not.exist
         $test.find('section.thread').should.not.exist
+      }).then(function() {
         forumsDeferred.resolve([{
           name: 'Home forum'
         }, {
           name: 'Water Cooler'
         }])
 
-        waitFor('forums', function() {
-          $test.find('section.forums').should.exist
-          waitFor('route-loading', function() {
-            $test.find('section.forums .route-loading').should.exist
-            $test.find('section.thread').should.not.exist
-            thread.resolve.threads.should.have.been.calledOnce
-            thread.resolve.threads.firstCall.args[0].params.should.deep.equal({
-              forumId: '1',
-              threadId: '2'
-            })
-            thread.resolve.threads.firstCall.args[1].should.deep.equal({
-              forums: [{
-                name: 'Home forum'
-              }, {
-                name: 'Water Cooler'
-              }]
-            })
-
-            threadsDeferred.resolve([{
-              title: 'first thread'
+        return pollUntilPassing(function() {
+          $test.find('section.forums .route-loading').should.exist
+          $test.find('section.thread').should.not.exist
+          thread.resolve.threads.should.have.been.calledOnce
+          thread.resolve.threads.firstCall.args[0].params.should.deep.equal({
+            forumId: '1',
+            threadId: '2'
+          })
+          thread.resolve.threads.firstCall.args[1].should.deep.equal({
+            forums: [{
+              name: 'Home forum'
             }, {
-              title: 'second thread'
-            }])
+              name: 'Water Cooler'
+            }]
+          })
+        })
+      }).then(function() {
+        threadsDeferred.resolve([{
+          title: 'first thread'
+        }, {
+          title: 'second thread'
+        }])
 
-            waitFor('thread', function() {
-              thread.resolve.threads.should.have.been.calledOnce
-              $test.find('section.forums').should.exist
-              $test.find('section.forums .route-loading').should.not.exist
+        return pollUntilPassing(function() {
+          thread.resolve.threads.should.have.been.calledOnce
+          $test.find('section.forums').should.exist
+          $test.find('section.forums .route-loading').should.not.exist
 
-              var $thread = $test.find('section.forums section.thread')
-              $thread.should.exist
-              $thread.find('h4').should.have.text('Viewing threads for forum Water Cooler')
-              $thread.find('li:first-child').should.have.text('first thread')
-              $thread.find('li:nth-child(2)').should.have.text('second thread')
-            }, done)
-          }, done, true)
-        }, done, true)
-      }, done, true)
+          var $thread = $test.find('section.forums section.thread')
+          $thread.should.exist
+          $thread.find('h4').should.have.text('Viewing threads for forum Water Cooler')
+          $thread.find('li:first-child').should.have.text('first thread')
+          $thread.find('li:nth-child(2)').should.have.text('second thread')
+        })
+      })
     })
 
-    it('should resolve items in routes without components', function(done) {
+    it('should resolve items in routes without components', function() {
       var
         accountDeferrred = defer(),
         orderHistoryDeferred = defer(),
@@ -433,10 +428,10 @@ describe('CherryTree for Knockout', function() {
 
       window.location.hash = 'profile'
       accountDeferrred.resolve({ name: 'Bob' })
-      waitFor('profile', function() {
+      return pollUntilPassing(function() {
         profileViewModel.should.have.been.calledOnce
         profileViewModel.firstCall.args[0].account.should.deep.equal({ name: 'Bob' })
-      }, done)
+      })
     })
   })
 })

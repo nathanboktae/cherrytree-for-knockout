@@ -16,25 +16,24 @@ module.exports = function(grunt) {
           build: process.env.TRAVIS_JOB_ID || 0,
           concurrency: 3,
           browsers: [{
-            browserName:"iphone",
-            platform: "OS X 10.10",
-            version: "7.1"
+            browserName: 'iphone',
+            platform: 'OS X 10.10',
+            version: '7.1'
           }, {
-            browserName:"iphone",
-            platform: "OS X 10.10",
-            version: "8.2"
+            browserName: 'iphone',
+            platform: 'OS X 10.10',
+            version: '8.2'
           }, {
-            browserName:"safari",
-            platform: "OS X 10.8",
-            version: "6"
+            browserName: 'safari',
+            version: '7'
           }, {
-            browserName:"safari",
-            platform: "OS X 10.10",
-            version: "8"
+            browserName: 'safari',
+            platform: 'OS X 10.10',
+            version: '8'
           }, {
-            browserName:"android",
-            platform: "Linux",
-            version: "4.0"
+            browserName: 'android',
+            platform: 'Linux',
+            version: '4.0'
           }, {
             browserName: 'googlechrome',
             platform: 'linux'
@@ -42,10 +41,6 @@ module.exports = function(grunt) {
             browserName: 'firefox',
             platform: 'WIN7',
           }, {
-            browserName: 'firefox',
-            version: '19',
-            platform: 'XP',
-          },{
             browserName: 'internet explorer',
             platform: 'WIN8.1',
             version: '11'
