@@ -1,6 +1,5 @@
 describe('CherryTree for Knockout', function() {
-  var router, $test, forums, forum, thread, login, hrefTest, goToRoute,
-  location = new cherrytree.HistoryLocation()
+  var router, location, $test, forums, forum, thread, login, hrefTest, goToRoute
 
   beforeEach(function() {
     router = new cherrytree()
@@ -73,16 +72,15 @@ describe('CherryTree for Knockout', function() {
     })
 
     ko.applyBindings({ router: router }, $test[0])
+    location = new cherrytree.MemoryLocation()
     router.listen(location)
     $test.find('section').should.not.exist
-    // return router.state.activeTransition
+    return router.state.activeTransition
   })
   afterEach(function() {
     ko.cleanNode($test[0])
     $test.remove()
-    window.location.hash = ''
     $test = null
-    // return router.state.activeTransition
   })
 
   function pollUntilPassing(fn) {
@@ -113,19 +111,19 @@ describe('CherryTree for Knockout', function() {
   })
 
   it('should automatically register a component and render it', function() {
-    window.location.hash = 'login'
+    location.setURL('/login')
     return pollUntilPassing(function() {
       $test.find('section.login h1').should.have.text('please login')
     })
   })
 
   it('should render nested components with route params', function() {
-    window.location.hash = 'forums/1'
+    location.setURL('/forums/1')
     return pollUntilPassing(function() {
       $test.find('section.forums section.forum').should.exist
       $test.find('section.forum h2').should.have.text('Viewing forum 1')
     }).then(function() {
-      window.location.hash = 'forums/1/threads/2'
+      location.setURL('/forums/1/threads/2')
       return pollUntilPassing(function() {
         $test.find('section.forums section.forum section.thread').should.exist
         $test.find('section.forum h2').should.have.text('Viewing forum 1')
@@ -144,7 +142,7 @@ describe('CherryTree for Knockout', function() {
       synchronous: true
     })
 
-    window.location.hash = 'login'
+    location.setURL('/login')
     return pollUntilPassing(function() {
       $test.find('section.login').should.exist
       $test.find('section.login h1').should.have.text('The login form!')
@@ -152,7 +150,7 @@ describe('CherryTree for Knockout', function() {
   })
 
   it('should expose $route on the bindingContext with the route name at that depth, params, and query', function() {
-    window.location.hash = 'forums/1/threads/2?unreadOnly=true'
+    location.setURL('/forums/1/threads/2?unreadOnly=true')
     return pollUntilPassing(function() {
       $test.find('section.forums section.forum section.thread').should.exist
       $test.find('section.thread p').should.exist
@@ -170,7 +168,7 @@ describe('CherryTree for Knockout', function() {
   })
 
   it('should back router.state with an observable', function() {
-    window.location.hash = 'forums/1'
+    location.setURL('/forums/1')
     return pollUntilPassing(function() {
       var stateProp = Object.getOwnPropertyDescriptor(router, 'state')
       ko.isObservable(stateProp.get).should.be.true
@@ -182,14 +180,14 @@ describe('CherryTree for Knockout', function() {
     beforeEach(function() {
       goToRoute = ko.observable({ name: 'login' })
 
-      window.location.hash = 'href-test/foobar'
+      location.setURL('/href-test/foobar')
       return pollUntilPassing(function() {
         $test[0].querySelector('.href-test').should.exist
       })
     })
 
     it('should render a href given only the route name, if the route needs no params', function() {
-      $test.find('.href-test a').should.have.attr('href', '#login')
+      $test.find('.href-test a').should.have.attr('href', '/login')
     })
 
     it('should render a href given the route name and params', function() {
@@ -200,7 +198,7 @@ describe('CherryTree for Knockout', function() {
           threadId: 3
         }
       })
-      $test.find('.href-test a').should.have.attr('href', '#forums/2/threads/3')
+      $test.find('.href-test a').should.have.attr('href', '/forums/2/threads/3')
     })
 
     it('should default to the same route name if given only params', function() {
@@ -209,13 +207,13 @@ describe('CherryTree for Knockout', function() {
           someparam: 'baz'
         }
       })
-      $test.find('.href-test a').should.have.attr('href', '#href-test/baz')
+      $test.find('.href-test a').should.have.attr('href', '/href-test/baz')
     })
 
     it('should accept just a string to use as the route name', function() {
-      window.location.hash = 'forums/1/threads/2'
+      location.setURL('/forums/1/threads/2')
       return pollUntilPassing(function() {
-        $test.find('section.thread h4 a').should.have.attr('href', '#forums/1')
+        $test.find('section.thread h4 a').should.have.attr('href', '/forums/1')
       })
     })
   })
@@ -275,7 +273,7 @@ describe('CherryTree for Knockout', function() {
     })
 
     it('should call a resolve function during route middleware resolution and block the route transition until it resolves', function() {
-      window.location.hash = 'forums'
+      location.setURL('/forums')
       return pollUntilPassing(function() {
         forums.resolve.forums.should.have.been.calledOnce.mmmkay
         forums.resolve.forums.firstCall.args[0].should.contain.keys(['params', 'query', 'path', 'routes'])
@@ -306,7 +304,7 @@ describe('CherryTree for Knockout', function() {
         })
       })
 
-      window.location.hash = 'messages'
+      location.setURL('/messages')
       return pollUntilPassing(function() {
         $test.find('blink').should.exist.and.have.text('loading!!!')
       })
@@ -332,11 +330,11 @@ describe('CherryTree for Knockout', function() {
         })
       })
 
-      window.location.hash = '/email-campaign/v2launch/create?title=Check%20out%20our%20new%20version!'
+      location.setURL('/email-campaign/v2launch/create?title=Check%20out%20our%20new%20version!')
     })
 
     it('should resolve nested components in order', function() {
-      window.location.hash = 'forums/1/threads/2'
+      location.setURL('/forums/1/threads/2')
 
       return pollUntilPassing(function() {
         forums.resolve.forums.should.have.been.calledOnce
@@ -426,7 +424,7 @@ describe('CherryTree for Knockout', function() {
         })
       })
 
-      window.location.hash = 'profile'
+      location.setURL('/profile')
       accountDeferrred.resolve({ name: 'Bob' })
       return pollUntilPassing(function() {
         profileViewModel.should.have.been.calledOnce
