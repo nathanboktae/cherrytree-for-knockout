@@ -28,5 +28,8 @@
     "bower_components",
     "test",
     "tests"
-  ]
+  ],
+  "devDependencies": {
+    "chai-dom": "~1.0.0"
+  }
 }

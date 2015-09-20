@@ -1,5 +1,5 @@
 describe('CherryTree for Knockout', function() {
-  var router, location, $test, forums, forum, thread, login, hrefTest, goToRoute
+  var router, location, testEl, forums, forum, thread, login, hrefTest, goToRoute
 
   beforeEach(function() {
     router = new cherrytree()
@@ -63,7 +63,8 @@ describe('CherryTree for Knockout', function() {
       route('router-href-test', hrefTest)
     })
 
-    $test = $('<div data-bind="routeView: router"></div>')
+    testEl = document.createElement('div')
+    testEl.setAttribute('data-bind', 'routeView: router')
     // flush the activeRoutes() that are in the closure from previous tests
     ko.bindingHandlers.routeView.middleware({
       routes: [],
@@ -71,16 +72,16 @@ describe('CherryTree for Knockout', function() {
       query: {}
     })
 
-    ko.applyBindings({ router: router }, $test[0])
+    ko.applyBindings({ router: router }, testEl)
     location = new cherrytree.MemoryLocation()
     router.listen(location)
-    $test.find('section').should.not.exist
+    should.not.exist(testEl.querySelector('section'))
     return router.state.activeTransition
   })
   afterEach(function() {
-    ko.cleanNode($test[0])
-    $test.remove()
-    $test = null
+    ko.cleanNode(testEl)
+    testEl.remove()
+    testEl = null
   })
 
   function pollUntilPassing(fn) {
@@ -107,27 +108,27 @@ describe('CherryTree for Knockout', function() {
   }
 
   it('should render a blank component when no route is active', function() {
-    $test.find('section').should.not.exist.mmmkay
+    testEl.querySelectorAll('section').should.be.empty.mmmkay
   })
 
   it('should automatically register a component and render it', function() {
     location.setURL('/login')
     return pollUntilPassing(function() {
-      $test.find('section.login h1').should.have.text('please login')
+      testEl.querySelector('section.login h1').textContent.should.equal('please login')
     })
   })
 
   it('should render nested components with route params', function() {
     location.setURL('/forums/1')
     return pollUntilPassing(function() {
-      $test.find('section.forums section.forum').should.exist
-      $test.find('section.forum h2').should.have.text('Viewing forum 1')
+      testEl.querySelector('section.forums section.forum').should.be.ok
+      testEl.querySelector('section.forum h2').textContent.should.equal('Viewing forum 1')
     }).then(function() {
       location.setURL('/forums/1/threads/2')
       return pollUntilPassing(function() {
-        $test.find('section.forums section.forum section.thread').should.exist
-        $test.find('section.forum h2').should.have.text('Viewing forum 1')
-        $test.find('section.thread h4').should.have.text('Viewing thread 2')
+        testEl.querySelector('section.forums section.forum section.thread').should.be.ok
+        testEl.querySelector('section.forum h2').textContent.should.equal('Viewing forum 1')
+        testEl.querySelector('section.thread h4').textContent.should.equal('Viewing thread 2')
       })
     })
   })
@@ -144,17 +145,17 @@ describe('CherryTree for Knockout', function() {
 
     location.setURL('/login')
     return pollUntilPassing(function() {
-      $test.find('section.login').should.exist
-      $test.find('section.login h1').should.have.text('The login form!')
+      testEl.querySelector('section.login').should.be.ok
+      testEl.querySelector('section.login h1').textContent.should.equal('The login form!')
     })
   })
 
   it('should expose $route on the bindingContext with the route name at that depth, params, and query', function() {
     location.setURL('/forums/1/threads/2?unreadOnly=true')
     return pollUntilPassing(function() {
-      $test.find('section.forums section.forum section.thread').should.exist
-      $test.find('section.thread p').should.exist
-      JSON.parse($test.find('section.thread p').text()).should.deep.equal({
+      testEl.querySelector('section.forums section.forum section.thread').should.be.ok
+      testEl.querySelector('section.thread p').should.be.ok
+      JSON.parse(testEl.querySelector('section.thread p').textContent).should.deep.equal({
         name: 'route:forums.threads.thread',
         params: {
           forumId: '1',
@@ -182,12 +183,12 @@ describe('CherryTree for Knockout', function() {
 
       location.setURL('/href-test/foobar')
       return pollUntilPassing(function() {
-        $test[0].querySelector('.href-test').should.exist
+        testEl.querySelector('.href-test').should.be.ok
       })
     })
 
     it('should render a href given only the route name, if the route needs no params', function() {
-      $test.find('.href-test a').should.have.attr('href', '/login')
+      testEl.querySelector('.href-test a').should.have.attr('href', '/login')
     })
 
     it('should render a href given the route name and params', function() {
@@ -198,7 +199,7 @@ describe('CherryTree for Knockout', function() {
           threadId: 3
         }
       })
-      $test.find('.href-test a').should.have.attr('href', '/forums/2/threads/3')
+      testEl.querySelector('.href-test a').should.have.attr('href', '/forums/2/threads/3')
     })
 
     it('should default to the same route name if given only params', function() {
@@ -207,13 +208,13 @@ describe('CherryTree for Knockout', function() {
           someparam: 'baz'
         }
       })
-      $test.find('.href-test a').should.have.attr('href', '/href-test/baz')
+      testEl.querySelector('.href-test a').should.have.attr('href', '/href-test/baz')
     })
 
     it('should accept just a string to use as the route name', function() {
       location.setURL('/forums/1/threads/2')
       return pollUntilPassing(function() {
-        $test.find('section.thread h4 a').should.have.attr('href', '/forums/1')
+        testEl.querySelector('section.thread h4 a').should.have.attr('href', '/forums/1')
       })
     })
   })
@@ -278,13 +279,13 @@ describe('CherryTree for Knockout', function() {
         forums.resolve.forums.should.have.been.calledOnce.mmmkay
         forums.resolve.forums.firstCall.args[0].should.contain.keys(['params', 'query', 'path', 'routes'])
 
-        $test.find('section.forums').should.not.exist
+        testEl.querySelectorAll('section.forums').should.be.empty
       }).then(function() {        
         forumsDeferred.resolve([{ id: 1, name: 'Home forum' }])
         return pollUntilPassing(function() {
           forums.resolve.forums.should.have.been.calledOnce
-          $test.find('section.forums').should.exist
-          $test.find('.route-loading').should.not.exist
+          testEl.querySelector('section.forums').should.be.ok
+          testEl.querySelectorAll('.route-loading').should.be.empty
         })
       })
     })
@@ -306,7 +307,7 @@ describe('CherryTree for Knockout', function() {
 
       location.setURL('/messages')
       return pollUntilPassing(function() {
-        $test.find('blink').should.exist.and.have.text('loading!!!')
+        testEl.querySelector('blink').should.be.ok.and.have.text('loading!!!')
       })
     })
 
@@ -340,8 +341,8 @@ describe('CherryTree for Knockout', function() {
         forums.resolve.forums.should.have.been.calledOnce
         thread.resolve.threads.should.have.not.been.called
 
-        $test.find('section.forums').should.not.exist
-        $test.find('section.thread').should.not.exist
+        testEl.querySelectorAll('section.forums').should.be.empty
+        testEl.querySelectorAll('section.thread').should.be.empty
       }).then(function() {
         forumsDeferred.resolve([{
           name: 'Home forum'
@@ -350,8 +351,8 @@ describe('CherryTree for Knockout', function() {
         }])
 
         return pollUntilPassing(function() {
-          $test.find('section.forums .route-loading').should.exist
-          $test.find('section.thread').should.not.exist
+          testEl.querySelector('section.forums .route-loading').should.be.ok
+          testEl.querySelectorAll('section.thread').should.be.empty
           thread.resolve.threads.should.have.been.calledOnce
           thread.resolve.threads.firstCall.args[0].params.should.deep.equal({
             forumId: '1',
@@ -374,14 +375,14 @@ describe('CherryTree for Knockout', function() {
 
         return pollUntilPassing(function() {
           thread.resolve.threads.should.have.been.calledOnce
-          $test.find('section.forums').should.exist
-          $test.find('section.forums .route-loading').should.not.exist
+          testEl.querySelector('section.forums').should.be.ok
+          testEl.querySelectorAll('section.forums .route-loading').should.be.empty
 
-          var $thread = $test.find('section.forums section.thread')
-          $thread.should.exist
-          $thread.find('h4').should.have.text('Viewing threads for forum Water Cooler')
-          $thread.find('li:first-child').should.have.text('first thread')
-          $thread.find('li:nth-child(2)').should.have.text('second thread')
+          var threadSection = testEl.querySelector('section.forums section.thread')
+          threadSection.should.be.ok
+          threadSection.querySelector('h4').textContent.should.equal('Viewing threads for forum Water Cooler')
+          threadSection.querySelector('li:first-child').textContent.should.equal('first thread')
+          threadSection.querySelector('li:nth-child(2)').textContent.should.equal('second thread')
         })
       })
     })
