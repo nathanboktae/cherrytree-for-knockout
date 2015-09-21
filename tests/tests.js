@@ -80,7 +80,6 @@ describe('CherryTree for Knockout', function() {
   })
   afterEach(function() {
     ko.cleanNode(testEl)
-    testEl.remove()
     testEl = null
   })
 
@@ -108,7 +107,7 @@ describe('CherryTree for Knockout', function() {
   }
 
   it('should render a blank component when no route is active', function() {
-    testEl.querySelectorAll('section').should.be.empty.mmmkay
+    testEl.querySelectorAll('section').length.should.equal(0)
   })
 
   it('should automatically register a component and render it', function() {
@@ -279,13 +278,13 @@ describe('CherryTree for Knockout', function() {
         forums.resolve.forums.should.have.been.calledOnce.mmmkay
         forums.resolve.forums.firstCall.args[0].should.contain.keys(['params', 'query', 'path', 'routes'])
 
-        testEl.querySelectorAll('section.forums').should.be.empty
+        testEl.querySelectorAll('section.forums').length.should.equal(0)
       }).then(function() {        
         forumsDeferred.resolve([{ id: 1, name: 'Home forum' }])
         return pollUntilPassing(function() {
           forums.resolve.forums.should.have.been.calledOnce
           testEl.querySelector('section.forums').should.be.ok
-          testEl.querySelectorAll('.route-loading').should.be.empty
+          testEl.querySelectorAll('.route-loading').length.should.equal(0)
         })
       })
     })
@@ -341,8 +340,8 @@ describe('CherryTree for Knockout', function() {
         forums.resolve.forums.should.have.been.calledOnce
         thread.resolve.threads.should.have.not.been.called
 
-        testEl.querySelectorAll('section.forums').should.be.empty
-        testEl.querySelectorAll('section.thread').should.be.empty
+        testEl.querySelectorAll('section.forums').length.should.equal(0)
+        testEl.querySelectorAll('section.thread').length.should.equal(0)
       }).then(function() {
         forumsDeferred.resolve([{
           name: 'Home forum'
@@ -352,7 +351,7 @@ describe('CherryTree for Knockout', function() {
 
         return pollUntilPassing(function() {
           testEl.querySelector('section.forums .route-loading').should.be.ok
-          testEl.querySelectorAll('section.thread').should.be.empty
+          testEl.querySelectorAll('section.thread').length.should.equal(0)
           thread.resolve.threads.should.have.been.calledOnce
           thread.resolve.threads.firstCall.args[0].params.should.deep.equal({
             forumId: '1',
@@ -376,7 +375,7 @@ describe('CherryTree for Knockout', function() {
         return pollUntilPassing(function() {
           thread.resolve.threads.should.have.been.calledOnce
           testEl.querySelector('section.forums').should.be.ok
-          testEl.querySelectorAll('section.forums .route-loading').should.be.empty
+          testEl.querySelectorAll('section.forums .route-loading').length.should.equal(0)
 
           var threadSection = testEl.querySelector('section.forums section.thread')
           threadSection.should.be.ok
