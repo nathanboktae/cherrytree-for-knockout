@@ -13,19 +13,33 @@
   var activeRoutes = ko.observableArray()
 
   ko.components.register('route-blank', {
-    viewModel: { instance: {} },
     template: '<div></div>',
     synchronous: true
   })
 
   ko.components.register('route-loading', {
-    viewModel: { instance: {} },
     template: '<div class="route-loading"></div>',
     synchronous: true
   })
 
   ko.bindingHandlers.routeView = {
-    init: function() {
+    init: function(_, valueAccessor, __, ___, bindingContext) {
+      var router = valueAccessor()
+      if (router && typeof router.map === 'function' && typeof router.use === 'function') {
+        if (!bindingContext.$root.router) {
+          bindingContext.$root.router = router
+        }
+        if (!Object.getOwnPropertyDescriptor(router, 'state').get) {
+          var routeState = ko.observable(router.state)
+          ;delete router.state
+          Object.defineProperty(router, 'state', {
+            get: routeState,
+            set: routeState,
+            enumerable: true
+          })
+        }
+      }
+
       return { controlsDescendantBindings: true }
     },
     update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
@@ -39,23 +53,6 @@
 
       var route = activeRoutes()[depth] || { name: 'route-blank', resolutions: function(){ return {} } }
       bindingContext.$route = route
-
-      var router = valueAccessor()
-      if (router && typeof router.map === 'function' && typeof router.use === 'function') {
-        if (!bindingContext.$root.$router) {
-          bindingContext.$root.$router = router
-
-          if (!Object.getOwnPropertyDescriptor(router, 'state').get) {
-            var routeState = ko.observable(router.state)
-            ;delete router.state
-            Object.defineProperty(router, 'state', {
-              get: routeState,
-              set: routeState,
-              enumerable: true
-            })
-          }
-        }
-      }
 
       function clone(obj) {
         return Object.keys(obj).reduce(function(clone, key) {
@@ -81,7 +78,7 @@
 
   ko.bindingHandlers.routeHref = {
     update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
-      var router = bindingContext.$root.$router
+      var router = bindingContext.$root.router
       if (!router) {
         throw new Error('No router found on the root binding context. Make sure to initialize the toplevel routeView with your router as the option.')
       }

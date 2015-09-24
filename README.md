@@ -63,7 +63,7 @@ Now for the HTML:
 </body>
 ```
 
-Notice the `routeView` binding. This is where a component for a route will be rendered. In the top level `routeView` binding, you must provide the router instance. This will be available on the root binding context as `$router`. For nested `routeView`s, the parameter is currently ignored so `true` or `{}` will suffice.
+Notice the `routeView` binding. This is where a component for a route will be rendered. In the top level `routeView` binding, you must provide the router instance. This will be available on the root view model as `router`. For nested `routeView`s, the parameter is currently ignored so `true` or `{}` will suffice.
 
 Above `main` there is a header which creates bindings based on the current route state. cherrytree-for-knockout will back the `state` property behind an observable, so when the current route changes, depedencies will update, so we can have a simple breadcrumb in this example. `routeHref` is a binding handler that will set the `href` for the route you specify via `router.generate`
 
