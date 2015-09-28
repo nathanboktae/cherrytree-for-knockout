@@ -130,8 +130,10 @@
     })
 
 
-    while (routeEqual(activeRoutes()[startIdx], filteredRoutes[startIdx]))
+    while (routeEqual(activeRoutes()[startIdx], filteredRoutes[startIdx])) {
+      Object.assign(resolutions, activeRoutes()[startIdx].resolutions())
       startIdx++
+    }
 
     var newRoutes = filteredRoutes.slice(startIdx).map(function(route) {
       var routeData

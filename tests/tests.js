@@ -433,6 +433,41 @@ describe('CherryTree for Knockout', function() {
       })
     })
 
+    it('should provide existing resolutions if parent routes did not change', function() {
+      location.setURL('/forums/1/threads/2')
+      forumsDeferred.resolve([{
+        name: 'Home forum'
+      }, {
+        name: 'Water Cooler'
+      }])
+      threadsDeferred.resolve([{
+        title: 'first thread'
+      }, {
+        title: 'second thread'
+      }])
+
+      return pollUntilPassing(function() {
+        forums.resolve.forums.should.have.been.calledOnce
+        thread.resolve.threads.should.have.been.calledOnce
+
+        testEl.querySelector('section.forums section.thread h4').textContent.should.equal('Viewing threads for forum Water Cooler')
+      }).then(function() {
+        threadsDeferred = defer()
+        threadsDeferred.resolve([{
+          title: 'another thread'
+        }])
+        location.setURL('/forums/1/threads/4')
+
+        return pollUntilPassing(function() {
+          forums.resolve.forums.should.have.been.calledOnce
+          thread.resolve.threads.should.have.been.calledTwice
+
+          testEl.querySelector('section.forums section.thread h4').textContent.should.equal('Viewing threads for forum Water Cooler')
+          testEl.querySelector('section.thread li:first-child').textContent.should.equal('another thread')
+        })
+      })
+    })
+
     it('should resolve items in routes without components', function() {
       var
         accountDeferrred = defer(),
