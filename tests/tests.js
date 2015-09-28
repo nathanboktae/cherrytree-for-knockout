@@ -32,7 +32,7 @@ describe('CherryTree for Knockout', function() {
     thread = {
       path: 'threads/:threadId',
       template: '<section class="thread">\
-        <h4><a data-bind="text: title.replace(\'{0}\', $route.params.threadId), routeHref: \'forumItem\'"></a></h4>\
+        <h4><a data-bind="text: title.replace(\'{0}\', $route.params.threadId), routeHref: \'threads\'"></a></h4>\
         <p data-bind="text: JSON.stringify($route)"></p></section>',
       viewModel: function() {
         this.title = 'Viewing thread {0}'
@@ -53,9 +53,7 @@ describe('CherryTree for Knockout', function() {
 
     router.map(function(route) {
       route('login', login)
-      route('forums.index', forums)
       route('forums', forums, function() {
-        route('forumItem', forum)
         route('threads', forum, function() {
           route('thread', thread)
         })
@@ -155,8 +153,7 @@ describe('CherryTree for Knockout', function() {
       testEl.querySelector('section.forums section.forum section.thread').should.be.ok
       testEl.querySelector('section.thread p').should.be.ok
       JSON.parse(testEl.querySelector('section.thread p').textContent).should.deep.equal({
-        name: 'route:forums.threads.thread',
-        routeName: 'thread',
+        name: 'route:thread',
         params: {
           forumId: '1',
           threadId: '2'
@@ -245,11 +242,11 @@ describe('CherryTree for Knockout', function() {
   describe('resolve', function() {
     var forumsDeferred, threadsDeferred
     function defer() {
-        var d = {}
-        d.promise = new Promise(function(resolve) {
-            d.resolve = resolve
-        })
-        return d
+      var d = {}
+      d.promise = new Promise(function(resolve) {
+          d.resolve = resolve
+      })
+      return d
     }
 
     beforeEach(function() {
@@ -291,8 +288,8 @@ describe('CherryTree for Knockout', function() {
       if (ko.components.isRegistered('route:forums')) {
         ko.components.unregister('route:forums')
       }
-      if (ko.components.isRegistered('route:forums.threads.thread')) {
-        ko.components.unregister('route:forums.threads.thread')
+      if (ko.components.isRegistered('route:thread')) {
+        ko.components.unregister('route:thread')
       }
     })
 

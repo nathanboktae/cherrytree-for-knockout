@@ -67,6 +67,7 @@
           var params = clone(res)
           params.$route = clone(route)
           delete params.$route.resolutions
+          prevRoute = route
           routeComponent({ name: route.name, params: params })
         } else {
           routeComponent({ name: 'route-loading' })
@@ -96,18 +97,18 @@
 
         return {
           href: router.generate(
-            name || bindingContext.$route.routeName,
+            name || bindingContext.$route.name.substr(ko.bindingHandlers.routeView.prefix.length),
             params || bindingContext.$route.params)
         }
       }, allBindings, viewModel, bindingContext)
     }
   }
 
-  function routeEqual(comp, route, params) {
-    if (!comp || !route || comp.routeName !== route.name) return false
+  function routeEqual(comp, route) {
+    if (!comp || !route || comp.name.substr(ko.bindingHandlers.routeView.prefix.length) !== route.name) return false
 
-    return route.paramNames.every(function(param) {
-      return comp.params[param] === params[param]
+    return Object.keys(route.params).every(function(param) {
+      return comp.params[param] === route.params[param]
     })
   }
 
@@ -118,15 +119,14 @@
     })
 
 
-    while (routeEqual(activeRoutes()[startIdx], filteredRoutes[startIdx], transition.params))
+    while (routeEqual(activeRoutes()[startIdx], filteredRoutes[startIdx]))
       startIdx++
 
     var newRoutes = filteredRoutes.slice(startIdx).map(function(route) {
       var routeData
       if (route.options.template) {
         routeData = {
-          name: ko.bindingHandlers.routeView.prefix + route.ancestors.concat([route.name]).join('.'),
-          routeName: route.name,
+          name: ko.bindingHandlers.routeView.prefix + route.name,
           params: transition.params,
           query: transition.query,
           resolutions: ko.observable(),

@@ -32,7 +32,7 @@
     "babel-core": "^5.8.23",
     "chai": "^3.2.0",
     "chai-dom": "^1.0.0",
-    "cherrytree": "github:QubitProducts/cherrytree",
+    "cherrytree": "github:nathanboktae/cherrytree#master",
     "grunt": "^0.4.5",
     "grunt-connect": "^0.2.0",
     "grunt-contrib-connect": "^0.11.2",
