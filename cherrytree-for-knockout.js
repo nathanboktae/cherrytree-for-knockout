@@ -22,6 +22,13 @@
     synchronous: true
   })
 
+  function clone(obj) {
+    return Object.keys(obj).reduce(function(clone, key) {
+      clone[key] = obj[key]
+      return clone
+    }, {})
+  }
+
   ko.bindingHandlers.routeView = {
     init: function(_, valueAccessor, __, ___, bindingContext) {
       var router = valueAccessor()
@@ -29,21 +36,15 @@
         if (!bindingContext.$root.router) {
           bindingContext.$root.router = router
         }
-        if (!Object.getOwnPropertyDescriptor(router, 'state').get) {
-          var routeState = ko.observable(router.state)
-          ;delete router.state
-          Object.defineProperty(router, 'state', {
-            get: routeState,
-            set: routeState,
-            enumerable: true
-          })
-        }
       }
 
       return { controlsDescendantBindings: true }
     },
-    update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
-      var depth = 0, contextIter = bindingContext.$parentContext
+    update: function(element, valueAccessor, ab, vm, bindingContext) {
+      var depth = 0, contextIter = bindingContext.$parentContext,
+      routeComponent = ko.observable({ name: 'route-blank' }),
+      prevRoute
+
       while (contextIter) {
         if ('$route' in contextIter) {
           depth++
@@ -51,27 +52,28 @@
         contextIter = contextIter.$parentContext
       }
 
-      var route = activeRoutes()[depth] || { name: 'route-blank', resolutions: function(){ return {} } }
-      bindingContext.$route = route
+      ko.computed(function() {
+        var route = activeRoutes()[depth]
+        if (route == prevRoute) return
+        if (!route) {
+          routeComponent({ name: 'route-blank' })
+          return
+        }
 
-      function clone(obj) {
-        return Object.keys(obj).reduce(function(clone, key) {
-          clone[key] = obj[key]
-          return clone
-        }, {})
-      }
+        bindingContext.$route = route
 
-      return ko.bindingHandlers.component.init(element, function() {
         var res = route.resolutions()
         if (res) {
           var params = clone(res)
           params.$route = clone(route)
           delete params.$route.resolutions
-          return { name: route.name, params: params }
+          routeComponent({ name: route.name, params: params })
         } else {
-          return { name: 'route-loading' }
+          routeComponent({ name: 'route-loading' })
         }
-      }, allBindings, viewModel, bindingContext)
+      }, null, { disposeWhenNodeIsRemoved: element }).extend({ rateLimit: 5 })
+
+      return ko.bindingHandlers.component.init(element, routeComponent, ab, vm, bindingContext)
     }
   }
   ko.bindingHandlers.routeView.prefix = 'route:'
@@ -84,30 +86,47 @@
       }
 
       return ko.bindingHandlers.attr.update(element, function() {
-        var opts = ko.utils.unwrapObservable(valueAccessor()) || {}, name, params
+        var opts = ko.unwrap(valueAccessor()), name, params
         if (typeof opts === 'string') {
           name = opts
         } else {
-          name = ko.utils.unwrapObservable(opts.name)
-          params = ko.utils.unwrapObservable(opts.params)
+          name = ko.unwrap(opts.name)
+          params = ko.unwrap(opts.params)
         }
 
         return {
           href: router.generate(
-            name || router.state.routes[router.state.routes.length - 1].name,
-            params || router.state.params)
+            name || bindingContext.$route.routeName,
+            params || bindingContext.$route.params)
         }
       }, allBindings, viewModel, bindingContext)
     }
   }
 
+  function routeEqual(comp, route, params) {
+    if (!comp || !route || comp.routeName !== route.name) return false
+
+    return route.paramNames.every(function(param) {
+      return comp.params[param] === params[param]
+    })
+  }
+
   return function knockoutCherrytreeMiddleware(transition) {
-    var resolutions = {}, routeResolvers = []
-    activeRoutes(transition.routes.map(function(route) {
+    var resolutions = {}, routeResolvers = [], startIdx = 0,
+    filteredRoutes = transition.routes.filter(function(route) {
+      return route.options && !!(route.options.template || route.options.resolve)
+    })
+
+
+    while (routeEqual(activeRoutes()[startIdx], filteredRoutes[startIdx], transition.params))
+      startIdx++
+
+    var newRoutes = filteredRoutes.slice(startIdx).map(function(route) {
       var routeData
-      if (route.options && route.options.template) {
+      if (route.options.template) {
         routeData = {
           name: ko.bindingHandlers.routeView.prefix + route.ancestors.concat([route.name]).join('.'),
+          routeName: route.name,
           params: transition.params,
           query: transition.query,
           resolutions: ko.observable(),
@@ -118,7 +137,7 @@
         }
       }
 
-      var resolve = route.options && route.options.resolve
+      var resolve = route.options.resolve
       if (resolve || routeResolvers.length) {
         var resolvers = Object.keys(resolve || {})
 
@@ -138,7 +157,9 @@
         routeData.resolutions(resolutions)
       }
       return routeData
-    }).filter(function(i) { return !!i }))
+    }).filter(function(i) { return !!i })
+
+    activeRoutes.splice.apply(activeRoutes, [startIdx, activeRoutes().length - startIdx].concat(newRoutes))
 
     return routeResolvers.reduce(function(promise, then) {
       return promise ? promise.then(then) : then()

@@ -156,6 +156,7 @@ describe('CherryTree for Knockout', function() {
       testEl.querySelector('section.thread p').should.be.ok
       JSON.parse(testEl.querySelector('section.thread p').textContent).should.deep.equal({
         name: 'route:forums.threads.thread',
+        routeName: 'thread',
         params: {
           forumId: '1',
           threadId: '2'
@@ -167,12 +168,35 @@ describe('CherryTree for Knockout', function() {
     })
   })
 
-  it('should back router.state with an observable', function() {
-    location.setURL('/forums/1')
-    return pollUntilPassing(function() {
-      var stateProp = Object.getOwnPropertyDescriptor(router, 'state')
-      ko.isObservable(stateProp.get).should.be.true
-      ko.isObservable(stateProp.set).should.be.true
+  describe('idempotency', function() {
+    it('should not re-render parents when navigating down to children', function() {
+      location.setURL('/forums/1')
+      return pollUntilPassing(function() {
+        testEl.querySelector('section.forums section.forum').should.be.ok
+      }).then(function() {
+        testEl.querySelector('section.forums section.forum').foo = 'bar'
+        location.setURL('/forums/1/threads/2')
+        return pollUntilPassing(function() {
+          testEl.querySelector('section.forums section.forum section.thread').should.be.ok
+        })
+      }).then(function() {
+        testEl.querySelector('section.forums section.forum').should.have.property('foo')
+      })
+    })
+
+    it('should not re-render parents when navigating to adjacent children', function() {
+      location.setURL('/forums/1/threads/2')
+      return pollUntilPassing(function() {
+        testEl.querySelector('section.thread h4').textContent.should.equal('Viewing thread 2')
+      }).then(function() {
+        testEl.querySelector('section.forums section.forum').foo = 'bar'
+        location.setURL('/forums/1/threads/4')
+        return pollUntilPassing(function() {
+          testEl.querySelector('section.thread h4').textContent.should.equal('Viewing thread 4')
+        })
+      }).then(function() {
+        testEl.querySelector('section.forums section.forum').should.have.property('foo')
+      })
     })
   })
 
