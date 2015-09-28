@@ -130,6 +130,32 @@ describe('CherryTree for Knockout', function() {
     })
   })
 
+  it('should add a class on routeView element that is the component name of the current route', function() {
+    router.map(function(route) {
+      route('login', login)
+      route('i LOVE beer!!', { path: 'so-cool', template: '<div class="kewl" data-bind="routeView: true"></div>' }, function() {
+        route('🍻#ch33rs🍻', { path: 'cheers', template: '<div></div>' })
+      })
+    })
+    testEl.className = 'existing-class'
+
+    location.setURL('/login')
+    return pollUntilPassing(function() {
+      testEl.className.should.equal('existing-class route-login')
+    }).then(function() {
+      location.setURL('/so-cool')
+      return pollUntilPassing(function() {
+        testEl.className.should.equal('existing-class route-i-love-beer--')
+      })
+    }).then(function() {
+      location.setURL('/so-cool/cheers')
+      return pollUntilPassing(function() {
+        testEl.className.should.equal('existing-class route-i-love-beer--')
+        testEl.querySelector('.kewl').className.should.equal('kewl route----ch33rs--')
+      })
+    })
+  })
+
   it('should not register components already registered', function() {
     ko.components.unregister('route:login')
     ko.components.register('route:login', {

@@ -43,7 +43,7 @@
     update: function(element, valueAccessor, ab, vm, bindingContext) {
       var depth = 0, contextIter = bindingContext.$parentContext,
       routeComponent = ko.observable({ name: 'route-blank' }),
-      prevRoute
+      prevRoute, routeClass 
 
       while (contextIter) {
         if ('$route' in contextIter) {
@@ -73,6 +73,17 @@
           routeComponent({ name: 'route-loading' })
         }
       }, null, { disposeWhenNodeIsRemoved: element }).extend({ rateLimit: 5 })
+
+      ko.computed(function() {
+        var newClass = routeComponent().name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()
+        if (newClass === routeClass) return
+        if (routeClass) {
+          element.classList.remove(routeClass)
+        }
+
+        routeClass = newClass
+        element.classList.add(routeClass)
+      }, null, { disposeWhenNodeIsRemoved: element })
 
       return ko.bindingHandlers.component.init(element, routeComponent, ab, vm, bindingContext)
     }
