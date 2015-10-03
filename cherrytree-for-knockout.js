@@ -29,6 +29,23 @@
     }, {})
   }
 
+  var origCreatChildContext = ko.bindingContext.prototype.createChildContext
+
+  // a bit of a hack, but since the component binding instantiates the component,
+  // likely async too, and no way to walk down binding contexts.
+  // we are extending the component context
+  ko.bindingContext.prototype.createChildContext = function(dataItemOrAccessor, dataItemAlias, extendCallback) {
+    return origCreatChildContext.call(this, dataItemOrAccessor, dataItemAlias, function(ctx) {
+      var retval = extendCallback(ctx)
+      if (ctx && ctx.$parentContext && ctx.$parentContext._routeCtx) {
+        delete ctx.$parentContext._routeCtx
+        delete ctx._routeCtx
+        ctx.$routeComponent = dataItemOrAccessor
+      }
+      return retval
+    })
+  }
+
   ko.bindingHandlers.routeView = {
     init: function(_, valueAccessor, __, ___, bindingContext) {
       var router = valueAccessor()
@@ -43,7 +60,7 @@
     update: function(element, valueAccessor, ab, vm, bindingContext) {
       var depth = 0, contextIter = bindingContext.$parentContext,
       routeComponent = ko.observable({ name: 'route-blank' }),
-      prevRoute, routeClass 
+      prevRoute, routeClass
 
       while (contextIter) {
         if ('$route' in contextIter) {
@@ -61,6 +78,7 @@
         }
 
         bindingContext.$route = route
+        bindingContext._routeCtx = true
 
         var res = route.resolutions()
         if (res) {

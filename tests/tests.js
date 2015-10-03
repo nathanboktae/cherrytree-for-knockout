@@ -191,6 +191,25 @@ describe('CherryTree for Knockout', function() {
     })
   })
 
+  it('should expose the route component as $routeComponent', function() {
+    ko.components.register('some-component', {
+      template: '<div class="route-comp-test" data-bind="text: $routeComponent.foo"></div>'
+    })
+    router.map(function(route) {
+      route('routecomp', {
+        viewModel: function() {
+          this.foo = 'bar'
+        },
+        template: '<some-component></some-component>'
+      })
+    })
+
+    location.setURL('/routecomp')
+    return pollUntilPassing(function() {
+      testEl.querySelector('.route-comp-test').textContent.should.equal('bar')
+    })
+  })
+
   describe('idempotency', function() {
     it('should not re-render parents when navigating down to children', function() {
       location.setURL('/forums/1')
