@@ -36,7 +36,7 @@
   // we are extending the component context
   ko.bindingContext.prototype.createChildContext = function(dataItemOrAccessor, dataItemAlias, extendCallback) {
     return origCreatChildContext.call(this, dataItemOrAccessor, dataItemAlias, function(ctx) {
-      var retval = extendCallback(ctx)
+      var retval = typeof extendCallback === 'function' && extendCallback(ctx)
       if (ctx && ctx.$parentContext && ctx.$parentContext._routeCtx) {
         delete ctx.$parentContext._routeCtx
         delete ctx._routeCtx
