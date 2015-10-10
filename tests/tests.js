@@ -2,7 +2,7 @@ describe('CherryTree for Knockout', function() {
   var router, location, testEl, forums, forum, thread, login, hrefTest, goToRoute
 
   beforeEach(function() {
-    router = new cherrytree()
+    router = cherrytree({ location: 'memory' })
     router.use(ko.bindingHandlers.routeView.middleware)
 
     login = {
@@ -71,8 +71,8 @@ describe('CherryTree for Knockout', function() {
     })
 
     ko.applyBindings({ router: router }, testEl)
-    location = new cherrytree.MemoryLocation()
-    router.listen(location)
+    router.listen()
+    location = router.location
     should.not.exist(testEl.querySelector('section'))
     return router.state.activeTransition
   })
