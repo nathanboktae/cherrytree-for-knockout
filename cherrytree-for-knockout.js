@@ -86,7 +86,7 @@
           params.$route = clone(route)
           delete params.$route.resolutions
           prevRoute = route
-          routeComponent({ name: route.name, params: params })
+          routeComponent({ name: ko.bindingHandlers.routeView.prefix + route.name, params: params })
         } else {
           routeComponent({ name: 'route-loading' })
         }
@@ -126,7 +126,7 @@
 
         return {
           href: router.generate(
-            name || bindingContext.$route.name.substr(ko.bindingHandlers.routeView.prefix.length),
+            name || bindingContext.$route.name,
             params || bindingContext.$route.params)
         }
       }, allBindings, viewModel, bindingContext)
@@ -134,7 +134,7 @@
   }
 
   function routeEqual(comp, route) {
-    if (!comp || !route || comp.name.substr(ko.bindingHandlers.routeView.prefix.length) !== route.name) return false
+    if (!comp || !route || comp.name !== route.name) return false
 
     return Object.keys(route.params).every(function(param) {
       return comp.params[param] === route.params[param]
@@ -157,14 +157,15 @@
       var routeData
       if (route.options.template) {
         routeData = {
-          name: ko.bindingHandlers.routeView.prefix + route.name,
+          name: route.name,
           params: transition.params,
           query: transition.query,
           resolutions: ko.observable(),
           transitionTo: transition.redirectTo
         }
-        if (!ko.components.isRegistered(routeData.name)) {
-          ko.components.register(routeData.name, route.options)
+        var compName = ko.bindingHandlers.routeView.prefix + routeData.name
+        if (!ko.components.isRegistered(compName)) {
+          ko.components.register(compName, route.options)
         }
       }
 

@@ -179,7 +179,7 @@ describe('CherryTree for Knockout', function() {
       testEl.querySelector('section.forums section.forum section.thread').should.be.ok
       testEl.querySelector('section.thread p').should.be.ok
       JSON.parse(testEl.querySelector('section.thread p').textContent).should.deep.equal({
-        name: 'route:thread',
+        name: 'thread',
         params: {
           forumId: '1',
           threadId: '2'
