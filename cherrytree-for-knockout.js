@@ -53,6 +53,9 @@
         if (!bindingContext.$root.router) {
           bindingContext.$root.router = router
         }
+        if (!bindingContext.$root.activeRoutes) {
+          bindingContext.$root.activeRoutes = activeRoutes
+        }
       }
 
       return { controlsDescendantBindings: true }

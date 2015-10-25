@@ -63,7 +63,7 @@ describe('CherryTree for Knockout', function() {
 
     testEl = document.createElement('div')
     testEl.setAttribute('data-bind', 'routeView: router')
-    // flush the activeRoutes() that are in the closure from previous tests
+    // flush the activeRoutes() from previous tests
     ko.bindingHandlers.routeView.middleware({
       routes: [],
       params: {},
@@ -187,6 +187,25 @@ describe('CherryTree for Knockout', function() {
         query: {
           unreadOnly: 'true'
         }
+      })
+    })
+  })
+
+  it('should expose activeRoutes() with the current active route name, query, param, and resolutions', function() {
+    location.setURL('/forums/1')
+    var activeRoutes = ko.contextFor(testEl).$root.activeRoutes
+    ko.isObservable(activeRoutes).should.be.true
+    should.not.exist(activeRoutes()[0])
+    return pollUntilPassing(function() {
+      activeRoutes().map(function(r) { return r.name }).should.deep.equal(['forums', 'threads'])
+      activeRoutes()[1].params.forumId.should.equal('1')
+      activeRoutes()[1].should.contain.keys(['params', 'query'])
+    }).then(function() {
+      location.setURL('/forums/1/threads/2')
+      should.not.exist(activeRoutes()[2])
+      return pollUntilPassing(function() {
+        activeRoutes().map(function(r) { return r.name }).should.deep.equal(['forums', 'threads', 'thread'])
+        activeRoutes()[2].params.forumId.should.equal('1')
       })
     })
   })
