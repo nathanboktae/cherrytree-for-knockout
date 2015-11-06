@@ -275,6 +275,12 @@ describe('CherryTree for Knockout', function() {
       testEl.querySelector('.href-test a').should.have.attr('href', '/login')
     })
 
+    it('should remove the href attribute if options is null or undefined', function() {
+      testEl.querySelector('.href-test a').should.have.attr('href', '/login')
+      goToRoute(null)
+      testEl.querySelector('.href-test a').should.not.have.attr('href')
+    })
+
     it('should render a href given the route name and params', function() {
       goToRoute({
         name: 'thread',

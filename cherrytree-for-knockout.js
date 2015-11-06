@@ -122,13 +122,13 @@
         var opts = ko.unwrap(valueAccessor()), name, params
         if (typeof opts === 'string') {
           name = opts
-        } else {
+        } else if (opts) {
           name = ko.unwrap(opts.name)
           params = ko.unwrap(opts.params)
         }
 
         return {
-          href: router.generate(
+          href: opts && router.generate(
             name || bindingContext.$route.name,
             params || bindingContext.$route.params)
         }
