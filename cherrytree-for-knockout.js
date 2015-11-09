@@ -2,10 +2,8 @@
   if (typeof define === 'function' && define.amd) {
     define(['knockout'], factory)
   } else if (typeof exports === 'object' && typeof module === 'object') {
-    /*global module*/
     module.exports = factory
   } else {
-    /*global ko*/
     var middleware = factory(ko)
     ko.bindingHandlers.routeView.middleware = middleware
   }
@@ -22,11 +20,11 @@
     synchronous: true
   })
 
-  function clone(obj) {
-    return Object.keys(obj).reduce(function(clone, key) {
-      clone[key] = obj[key]
-      return clone
-    }, {})
+  function extend(target, obj) {
+    return Object.keys(obj).reduce(function(t, key) {
+      t[key] = obj[key]
+      return t
+    }, target)
   }
 
   var origCreatChildContext = ko.bindingContext.prototype.createChildContext
@@ -85,9 +83,15 @@
 
         var res = route.resolutions()
         if (res) {
-          var params = clone(res)
-          params.$route = clone(route)
+          var params = extend({}, res)
+          params.$route = extend({}, route)
           delete params.$route.resolutions
+
+          if (route.queryParams) {
+            extend(params, route.queryParams)
+            delete params.$route.queryParams
+          }
+
           prevRoute = route
           routeComponent({ name: ko.bindingHandlers.routeView.prefix + route.name, params: params })
         } else {
@@ -166,9 +170,27 @@
           resolutions: ko.observable(),
           transitionTo: transition.redirectTo
         }
+
         var compName = ko.bindingHandlers.routeView.prefix + routeData.name
         if (!ko.components.isRegistered(compName)) {
           ko.components.register(compName, route.options)
+        }
+
+        var query = route.options.query
+        if (query) {
+          routeData.queryParams = Object.keys(query).reduce(function(q, key) {
+            var queryVal = routeData.query[key]
+            if (!Array.isArray(query[key])) {
+              q[key] = ko.observable(queryVal !== undefined ? queryVal : query[key])
+            } else {
+              if (queryVal) {
+                q[key] = ko.observableArray(Array.isArray(queryVal) ? queryVal : [queryVal])
+              } else {
+                q[key] = ko.observableArray(query[key])
+              }
+            }
+            return q
+          }, {})
         }
       }
 

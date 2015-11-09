@@ -1,5 +1,5 @@
 describe('CherryTree for Knockout', function() {
-  var router, location, testEl, forums, forum, thread, login, hrefTest, goToRoute
+  var router, location, testEl, forums, forum, thread, login, inboxParams, goToRoute
 
   beforeEach(function() {
     router = cherrytree({ location: 'memory' })
@@ -40,17 +40,6 @@ describe('CherryTree for Knockout', function() {
       synchronous: true
     }
 
-    hrefTest = {
-      synchronous: true,
-      path: 'href-test/:someparam',
-      viewModel: function() {
-        return { goToRoute: goToRoute }
-      },
-      template: '<nav class="href-test">\
-          <a data-bind="routeHref: goToRoute"></a>\
-        </nav>'
-    }
-
     router.map(function(route) {
       route('login', login)
       route('forums', forums, function() {
@@ -58,7 +47,28 @@ describe('CherryTree for Knockout', function() {
           route('thread', thread)
         })
       })
-      route('router-href-test', hrefTest)
+      route('router-href-test', {
+        synchronous: true,
+        path: 'href-test/:someparam',
+        viewModel: function() {
+          return { goToRoute: goToRoute }
+        },
+        template: '<nav class="href-test">\
+            <a data-bind="routeHref: goToRoute"></a>\
+          </nav>'
+      })
+      route('inbox', {
+        synchronous: true,
+        query: {
+          sort: 'desc',
+          search: undefined,
+          tag: []
+        },
+        viewModel: function(params) {
+          return inboxParams = params
+        },
+        template: '<div class="inbox"></div>'
+      })
     })
 
     testEl = document.createElement('div')
@@ -96,7 +106,7 @@ describe('CherryTree for Knockout', function() {
           reject(e)
         }
       }
-    } 
+    }
     setTimeout(attempt, 2)
 
     return new Promise(function(r, rj) {
@@ -254,6 +264,21 @@ describe('CherryTree for Knockout', function() {
         location.setURL('/forums/1/threads/4')
         return pollUntilPassing(function() {
           testEl.querySelector('section.thread h4').textContent.should.equal('Viewing thread 4')
+        })
+      }).then(function() {
+        testEl.querySelector('section.forums section.forum').should.have.property('foo')
+      })
+    })
+
+    it('should not rerender anything when only the query string changes', function() {
+      location.setURL('/forums/1')
+      return pollUntilPassing(function() {
+        testEl.querySelector('section.forums section.forum').should.be.ok
+      }).then(function() {
+        testEl.querySelector('section.forums section.forum').foo = 'bar'
+        location.setURL('/forums/1?hello=world')
+        return new Promise(function(res) {
+          setTimeout(function() { res() }, 100)
         })
       }).then(function() {
         testEl.querySelector('section.forums section.forum').should.have.property('foo')
@@ -557,5 +582,34 @@ describe('CherryTree for Knockout', function() {
         profileViewModel.firstCall.args[0].account.should.deep.equal({ name: 'Bob' })
       })
     })
+  })
+
+  describe('query', function() {
+    it('should provide an object with observables behind properties defaulting to the specified values on params', function() {
+      location.setURL('/inbox')
+      return pollUntilPassing(function() { inboxParams.sort }).then(function() {
+        ko.isWritableObservable(inboxParams.sort).should.be.true
+        ko.isWritableObservable(inboxParams.search).should.be.true
+        ko.isWritableObservable(inboxParams.tag).should.be.true
+        inboxParams.tag.push.should.be.instanceof(Function)
+
+        inboxParams.sort().should.equal('desc')
+        chai.expect(inboxParams.search()).to.equal(undefined)
+        inboxParams.tag().should.be.empty
+      })
+    })
+
+    it('should set values from the query string as those property\'s initial value', function() {
+      location.setURL('/inbox?sort=asc&search=%20Hi&tag=suggestion')
+      return pollUntilPassing(function() { inboxParams.sort }).then(function() {
+        inboxParams.sort().should.equal('asc')
+        inboxParams.search().should.equal(' Hi')
+        inboxParams.tag().should.deep.equal(['suggestion'])
+      })
+    })
+
+    it('should replace the current location history when an observable changes')
+    it('should expand array items out in the query string properly when an observableArray updates')
+    it('should update the observables if the query string changes at the same location, removing if it is the default')
   })
 })
