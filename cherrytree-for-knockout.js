@@ -54,6 +54,9 @@
         }
         if (!bindingContext.$root.activeRoutes) {
           bindingContext.$root.activeRoutes = activeRoutes
+          bindingContext.$leafRoute = function() {
+            return activeRoutes()[activeRoutes().length - 1]
+          }
         }
       }
 

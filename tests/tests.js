@@ -209,6 +209,7 @@ describe('CherryTree for Knockout', function() {
     var activeRoutes = ko.contextFor(testEl).$root.activeRoutes
     ko.isObservable(activeRoutes).should.be.true
     should.not.exist(activeRoutes()[0])
+
     return pollUntilPassing(function() {
       activeRoutes().map(function(r) { return r.name }).should.deep.equal(['forums', 'threads'])
       activeRoutes()[1].params.forumId.should.equal('1')
@@ -219,6 +220,24 @@ describe('CherryTree for Knockout', function() {
       return pollUntilPassing(function() {
         activeRoutes().map(function(r) { return r.name }).should.deep.equal(['forums', 'threads', 'thread'])
         activeRoutes()[2].params.forumId.should.equal('1')
+      })
+    })
+  })
+
+  it('should expose $leafRoute() on the bindingContext for easy access to the deepest route', function() {
+    location.setURL('/forums/1')
+    ko.contextFor(testEl).$leafRoute.should.be.instanceof(Function)
+    should.not.exist(ko.contextFor(testEl).$leafRoute())
+
+    return pollUntilPassing(function() {
+      ko.contextFor(testEl).$leafRoute().name.should.equal('threads')
+      ko.contextFor(testEl.querySelector('section.forums h1')).$leafRoute().name.should.equal('threads')
+    }).then(function() {
+      location.setURL('/forums/1/threads/2')
+      return pollUntilPassing(function() {
+        ko.contextFor(testEl).$leafRoute().name.should.equal('thread')
+        ko.contextFor(testEl.querySelector('section.forums h1')).$leafRoute().name.should.equal('thread')
+        ko.contextFor(testEl.querySelector('section.thread p')).$leafRoute().name.should.equal('thread')
       })
     })
   })
