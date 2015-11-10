@@ -614,7 +614,12 @@ describe('CherryTree for Knockout', function() {
     it('should replace the current location history when an observable changes, preserving other querystring values', function() {
       location.setURL('/inbox?foo=bar&search=bob')
       return pollUntilPassing(function() { testEl.querySelector('.inbox a.sort').click }).then(function() {
-        testEl.querySelector('.inbox a.sort').click()
+        var sort = testEl.querySelector('.inbox a.sort')
+        if (typeof sort.click === 'function') {
+          sort.click()
+        } else {
+          inboxParams.sort('asc')
+        }
         return pollUntilPassing(function() {
           location.getURL().should.equal('/inbox?foo=bar&search=bob&sort=asc')
           testEl.querySelector('.inbox a.sort').should.have.text('asc')
@@ -631,7 +636,6 @@ describe('CherryTree for Knockout', function() {
     it('should remove the query string if it becomes the default', function() {
       location.setURL('/inbox?sort=asc')
       return pollUntilPassing(function() { testEl.querySelector('.inbox a.sort').click }).then(function() {
-        //testEl.querySelector('.inbox a.sort').click()
         inboxParams.sort('desc')
         return pollUntilPassing(function() {
           location.getURL().should.equal('/inbox')
@@ -646,7 +650,7 @@ describe('CherryTree for Knockout', function() {
 
     it('should expand array items out in the query string properly when an observableArray updates', function() {
       location.setURL('/inbox?foo=bar&search=bob')
-      return pollUntilPassing(function() { inboxParams.sort }).then(function() {
+      return pollUntilPassing(function() { testEl.querySelector('.inbox a.sort').click }).then(function() {
         inboxParams.tags(['unread'])
         return pollUntilPassing(function() {
           location.getURL().should.equal('/inbox?foo=bar&search=bob&tags%5B0%5D=unread')
