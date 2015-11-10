@@ -8,7 +8,7 @@
     ko.bindingHandlers.routeView.middleware = middleware
   }
 })(function(ko) {
-  var activeRoutes = ko.observableArray()
+  var activeRoutes = ko.observableArray(), transitioning, router
 
   ko.components.register('route-blank', {
     template: '<div></div>',
@@ -46,10 +46,11 @@
 
   ko.bindingHandlers.routeView = {
     init: function(_, valueAccessor, __, ___, bindingContext) {
-      var router = valueAccessor()
-      if (router && typeof router.map === 'function' && typeof router.use === 'function') {
+      var r = valueAccessor()
+      if (r && typeof r.map === 'function' && typeof r.use === 'function') {
+        router = r
         if (!bindingContext.$root.router) {
-          bindingContext.$root.router = router
+          bindingContext.$root.router = r
         }
         if (!bindingContext.$root.activeRoutes) {
           bindingContext.$root.activeRoutes = activeRoutes
@@ -89,7 +90,6 @@
 
           if (route.queryParams) {
             extend(params, route.queryParams)
-            delete params.$route.queryParams
           }
 
           prevRoute = route
@@ -117,7 +117,6 @@
 
   ko.bindingHandlers.routeHref = {
     update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
-      var router = bindingContext.$root.router
       if (!router) {
         throw new Error('No router found on the root binding context. Make sure to initialize the toplevel routeView with your router as the option.')
       }
@@ -140,6 +139,46 @@
     }
   }
 
+  ko.computed(function bindToQueryString() {
+    var routes = activeRoutes(),
+    query = routes.reduce(function(q, route) {
+      if (route.queryParams) {
+        Object.keys(route.queryParams).forEach(function(key) {
+          var val = route.queryParams[key]()
+          if (val !== route.queryParams[key].default) {
+            q[key] = val
+          } else {
+            delete q[key]
+          }
+        })
+      }
+      return q
+    }, extend({}, routes.length ? routes[routes.length - 1].query : {}))
+
+    if (transitioning) return
+    if (transitioning !== false) {
+      transitioning = false
+      return
+    }
+
+    var url = router.location.getURL(),
+        stringified = router.options.qs.stringify(query)
+    router.location.setURL(url.split('?')[0] + (stringified ? '?' + stringified : ''))
+  })
+
+  function updateQueryParams(route, query) {
+    if (route.queryParams) {
+      Object.keys(route.queryParams).forEach(function(key) {
+        var observable = route.queryParams[key]
+        if (key in query) {
+          observable(query[key])
+        } else {
+          observable(Array.isArray(observable.default) ? observable.default.slice() : observable.default)
+        }
+      })
+    }
+  }
+
   function routeEqual(comp, route) {
     if (!comp || !route || comp.name !== route.name) return false
 
@@ -153,10 +192,11 @@
     filteredRoutes = transition.routes.filter(function(route) {
       return route.options && !!(route.options.template || route.options.resolve)
     })
-
+    transitioning = true // router.state.activeTransition isn't set to this one yet
 
     while (routeEqual(activeRoutes()[startIdx], filteredRoutes[startIdx])) {
       Object.assign(resolutions, activeRoutes()[startIdx].resolutions())
+      updateQueryParams(activeRoutes()[startIdx], transition.query)
       startIdx++
     }
 
@@ -179,15 +219,17 @@
         var query = route.options.query
         if (query) {
           routeData.queryParams = Object.keys(query).reduce(function(q, key) {
-            var queryVal = routeData.query[key]
-            if (!Array.isArray(query[key])) {
-              q[key] = ko.observable(queryVal !== undefined ? queryVal : query[key])
+            var queryVal = routeData.query[key], defaultVal = query[key]
+            if (!Array.isArray(defaultVal)) {
+              q[key] = ko.observable(queryVal !== undefined ? queryVal : defaultVal)
+              q[key].default = defaultVal
             } else {
               if (queryVal) {
                 q[key] = ko.observableArray(Array.isArray(queryVal) ? queryVal : [queryVal])
               } else {
-                q[key] = ko.observableArray(query[key])
+                q[key] = ko.observableArray(defaultVal)
               }
+              q[key].default = defaultVal.splice()
             }
             return q
           }, {})
@@ -217,6 +259,7 @@
     }).filter(function(i) { return !!i })
 
     activeRoutes.splice.apply(activeRoutes, [startIdx, activeRoutes().length - startIdx].concat(newRoutes))
+    transitioning = false
 
     return routeResolvers.reduce(function(promise, then) {
       return promise ? promise.then(then) : then()

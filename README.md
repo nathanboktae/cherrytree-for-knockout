@@ -24,7 +24,7 @@ var login = {
     this.username = ko.observable()
     // ....
   },
-  template: '<form class="login"><input name="username" data-bind="value: username></input> .... </form>'
+  template: '<form class="login"><input name="username" data-bind="value: username"></input> .... </form>'
 }
 
 var forums = { /* ... */ }
@@ -45,7 +45,7 @@ Notice that you do not have to explicitly register the component via `ko.compone
 
 Now for the HTML:
 
-```
+```html
 <body>
   <header>
     <ul data-bind="foreach: route.state && route.state.routes">

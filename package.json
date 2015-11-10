@@ -40,6 +40,7 @@
     "mocha": "^2.2.5",
     "mocha-phantomjs": "^3.6.0",
     "phantomjs": "1.9.7-15",
+    "qs": "^6.0.0",
     "sinon-browser-only": "^1.12.1",
     "sinon-chai": "^2.8.0"
   }

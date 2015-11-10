@@ -2,7 +2,7 @@ describe('CherryTree for Knockout', function() {
   var router, location, testEl, forums, forum, thread, login, inboxParams, goToRoute
 
   beforeEach(function() {
-    router = cherrytree({ location: 'memory' })
+    router = cherrytree({ location: 'memory', qs: Qs })
     router.use(ko.bindingHandlers.routeView.middleware)
 
     login = {
@@ -62,12 +62,15 @@ describe('CherryTree for Knockout', function() {
         query: {
           sort: 'desc',
           search: undefined,
-          tag: []
+          tags: []
         },
         viewModel: function(params) {
           return inboxParams = params
         },
-        template: '<div class="inbox"></div>'
+        template: '<div class="inbox">\
+          <input data-bind="textInput: search" />\
+          <a class="sort" data-bind="click: function() { sort(sort() === \'asc\' ? \'desc\' : \'asc\') }, text: sort"></a>\
+        </div>'
       })
     })
 
@@ -590,26 +593,94 @@ describe('CherryTree for Knockout', function() {
       return pollUntilPassing(function() { inboxParams.sort }).then(function() {
         ko.isWritableObservable(inboxParams.sort).should.be.true
         ko.isWritableObservable(inboxParams.search).should.be.true
-        ko.isWritableObservable(inboxParams.tag).should.be.true
-        inboxParams.tag.push.should.be.instanceof(Function)
+        ko.isWritableObservable(inboxParams.tags).should.be.true
+        inboxParams.tags.push.should.be.instanceof(Function)
 
         inboxParams.sort().should.equal('desc')
         chai.expect(inboxParams.search()).to.equal(undefined)
-        inboxParams.tag().should.be.empty
+        inboxParams.tags().should.be.empty
       })
     })
 
     it('should set values from the query string as those property\'s initial value', function() {
-      location.setURL('/inbox?sort=asc&search=%20Hi&tag=suggestion')
-      return pollUntilPassing(function() { inboxParams.sort }).then(function() {
-        inboxParams.sort().should.equal('asc')
-        inboxParams.search().should.equal(' Hi')
-        inboxParams.tag().should.deep.equal(['suggestion'])
+      location.setURL('/inbox?sort=asc&search=%20Hi&tags[]=suggestion')
+      return pollUntilPassing(function() { testEl.querySelector('.inbox a.sort').click }).then(function() {
+        testEl.querySelector('.inbox a.sort').should.have.text('asc')
+        testEl.querySelector('.inbox input').value.should.equal(' Hi')
+        inboxParams.tags().should.deep.equal(['suggestion'])
       })
     })
 
-    it('should replace the current location history when an observable changes')
-    it('should expand array items out in the query string properly when an observableArray updates')
-    it('should update the observables if the query string changes at the same location, removing if it is the default')
+    it('should replace the current location history when an observable changes, preserving other querystring values', function() {
+      location.setURL('/inbox?foo=bar&search=bob')
+      return pollUntilPassing(function() { testEl.querySelector('.inbox a.sort').click }).then(function() {
+        testEl.querySelector('.inbox a.sort').click()
+        return pollUntilPassing(function() {
+          location.getURL().should.equal('/inbox?foo=bar&search=bob&sort=asc')
+          testEl.querySelector('.inbox a.sort').should.have.text('asc')
+        })
+      }).then(function() {
+        inboxParams.search('Jane')
+        return pollUntilPassing(function() {
+          location.getURL().should.equal('/inbox?foo=bar&search=Jane&sort=asc')
+          testEl.querySelector('.inbox input').value.should.equal('Jane')
+        })
+      })
+    })
+
+    it('should remove the query string if it becomes the default', function() {
+      location.setURL('/inbox?sort=asc')
+      return pollUntilPassing(function() { testEl.querySelector('.inbox a.sort').click }).then(function() {
+        //testEl.querySelector('.inbox a.sort').click()
+        inboxParams.sort('desc')
+        return pollUntilPassing(function() {
+          location.getURL().should.equal('/inbox')
+        })
+      }).then(function() {
+        inboxParams.tags.push('unread')
+        return pollUntilPassing(function() {
+          location.getURL().should.equal('/inbox?tags%5B0%5D=unread')
+        })
+      })
+    })
+
+    it('should expand array items out in the query string properly when an observableArray updates', function() {
+      location.setURL('/inbox?foo=bar&search=bob')
+      return pollUntilPassing(function() { inboxParams.sort }).then(function() {
+        inboxParams.tags(['unread'])
+        return pollUntilPassing(function() {
+          location.getURL().should.equal('/inbox?foo=bar&search=bob&tags%5B0%5D=unread')
+        })
+      }).then(function() {
+        inboxParams.tags.push('priority')
+        return pollUntilPassing(function() {
+          location.getURL().should.equal('/inbox?foo=bar&search=bob&tags%5B0%5D=unread&tags%5B1%5D=priority')
+        })
+      })
+    })
+
+    it('should update the observables if the query string changes at the same location', function() {
+      location.setURL('/inbox?foo=bar&search=bob')
+      return pollUntilPassing(function() { testEl.querySelector('.inbox a.sort').click }).then(function() {
+        testEl.querySelector('.inbox a.sort').should.have.text('desc')
+        testEl.querySelector('.inbox input').value.should.equal('bob')
+
+        location.setURL('/inbox?foo=baz&search=Jane&tags=unread&tags=priority')
+        return pollUntilPassing(function() {
+          testEl.querySelector('.inbox input').value.should.equal('Jane')
+          testEl.querySelector('.inbox a.sort').should.have.text('desc')
+          inboxParams.tags().should.deep.equal(['unread', 'priority'])
+          location.getURL().should.equal('/inbox?foo=baz&search=Jane&tags=unread&tags=priority')
+        })
+      }).then(function() {
+        location.setURL('/inbox')
+        return pollUntilPassing(function() {
+          testEl.querySelector('.inbox input').value.should.equal('')
+          testEl.querySelector('.inbox a.sort').should.have.text('desc')
+          inboxParams.tags().should.be.empty
+          location.getURL().should.equal('/inbox')
+        })
+      })
+    })
   })
 })
