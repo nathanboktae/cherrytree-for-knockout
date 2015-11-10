@@ -69,3 +69,24 @@ Above `main` there is a header which creates bindings based on the current route
 
 Below that is a signout button with a click handler, showing that cherrytree-for-knockout plugs into your existing app how you wish, and ultimately your are still in control of your application's layout and workflow.
 
+### Two-way binding of Query Parameters
+
+Keeping all your view state in the query parameter allows users to always refresh the page and get back right where they are at, and share links to other people to see exactly what they are seeing. cherrytree-for-knockout will let you bind to query string parameters easily to support this by giving you an observable that reflects the query string, including defaults.
+
+```javascript
+var inbox = {
+  path: 'inbox',
+  query: {
+    sort: 'desc'
+  },
+  viewModel: function(params) {
+    this.sort = params.sort
+    this.toggleSort = () => params.sort(params.sort() === 'asc' ? 'desc' : 'asc')
+  }
+  template: '<div class="inbox">\
+      <a class="sort" data-bind="click: toggleSort, text: sort"></a>\
+    </div>'
+}
+```
+
+When `a.sort` is clicked, the URL becomes `/inbox?sort=desc`. When clicked again, it becomes `/inbox` as sort gets set back to it's default.
