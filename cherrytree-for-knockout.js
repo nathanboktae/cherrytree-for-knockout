@@ -166,7 +166,7 @@
 
     var url = router.location.getURL(),
         stringified = router.options.qs.stringify(query)
-    router.location.setURL(url.split('?')[0] + (stringified ? '?' + stringified : ''))
+    router.location.replaceURL(url.split('?')[0] + (stringified ? '?' + stringified : ''))
   })
 
   function updateQueryParams(route, query) {
