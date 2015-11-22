@@ -125,18 +125,26 @@
       }
 
       return ko.bindingHandlers.attr.update(element, function() {
-        var opts = ko.unwrap(valueAccessor()), name, params
+        var opts = ko.unwrap(valueAccessor()), name, params, query
         if (typeof opts === 'string') {
           name = opts
         } else if (opts) {
           name = ko.unwrap(opts.name)
           params = ko.unwrap(opts.params)
+          query = ko.unwrap(opts.query)
+          if (query === true) {
+            query = Object.keys(bindingContext.$route.queryParams).reduce(function(q, k) {
+              q[k] = ko.unwrap(bindingContext.$route.queryParams[k])
+              return q
+            }, {})
+          }
         }
 
         return {
           href: opts && router.generate(
             name || bindingContext.$route.name,
-            params || bindingContext.$route.params)
+            params || bindingContext.$route.params,
+            query)
         }
       }, allBindings, viewModel, bindingContext)
     }
@@ -166,7 +174,7 @@
 
     var url = router.location.getURL(),
         stringified = router.options.qs.stringify(query)
-    router.location.replaceURL(url.split('?')[0] + (stringified ? '?' + stringified : ''))
+    router.location.setURL(url.split('?')[0] + (stringified ? '?' + stringified : ''))
   })
 
   function updateQueryParams(route, query) {

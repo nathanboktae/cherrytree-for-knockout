@@ -50,6 +50,9 @@ describe('CherryTree for Knockout', function() {
       route('router-href-test', {
         synchronous: true,
         path: 'href-test/:someparam',
+        query: {
+          foo: undefined,
+        },
         viewModel: function() {
           return { goToRoute: goToRoute }
         },
@@ -312,7 +315,7 @@ describe('CherryTree for Knockout', function() {
     beforeEach(function() {
       goToRoute = ko.observable({ name: 'login' })
 
-      location.setURL('/href-test/foobar')
+      location.setURL('/href-test/foobar?foo=bar')
       return pollUntilPassing(function() {
         testEl.querySelector('.href-test').should.be.ok
       })
@@ -353,6 +356,36 @@ describe('CherryTree for Knockout', function() {
       return pollUntilPassing(function() {
         testEl.querySelector('section.thread h4 a').should.have.attr('href', '/forums/1')
       })
+    })
+
+    it('should include the query bounded observables if true', function() {
+      goToRoute({
+        name: 'thread',
+        params: {
+          forumId: 2,
+          threadId: 3
+        },
+        query: true
+      })
+      testEl.querySelector('.href-test a').should.have.attr('href', '/forums/2/threads/3?foo=bar')
+
+      location.setURL('/href-test/foobar?foo=1')
+      return pollUntilPassing(function() {
+        testEl.querySelector('.href-test a').should.have.attr('href', '/forums/2/threads/3?foo=1')
+      })
+    })
+
+    it('should accept an explicit object, overwriting query values', function() {
+      goToRoute({
+        params: {
+          someparam: 'baz'
+        },
+        query: {
+          foo: 1,
+          somequery: 'a'
+        }
+      })
+      testEl.querySelector('.href-test a').should.have.attr('href', '/href-test/baz?foo=1&somequery=a')
     })
   })
 
