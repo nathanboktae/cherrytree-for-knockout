@@ -37,6 +37,7 @@
       var retval = typeof extendCallback === 'function' && extendCallback(ctx)
       if (ctx && ctx.$parentContext && ctx.$parentContext._routeCtx) {
         delete ctx.$parentContext._routeCtx
+        ctx.$route = ctx._routeCtx
         delete ctx._routeCtx
         ctx.$routeComponent = dataItemOrAccessor
       }
@@ -63,14 +64,12 @@
       return { controlsDescendantBindings: true }
     },
     update: function(element, valueAccessor, ab, vm, bindingContext) {
-      var depth = 0, contextIter = bindingContext.$parentContext,
+      var depth = 0, contextIter = bindingContext,
       routeComponent = ko.observable({ name: 'route-blank' }),
       prevRoute, routeClass
 
-      while (contextIter) {
-        if ('$route' in contextIter) {
-          depth++
-        }
+      while (contextIter.$parentContext && contextIter.$routeComponent !== contextIter.$parentContext.$routeComponent) {
+        depth++
         contextIter = contextIter.$parentContext
       }
 
@@ -82,8 +81,7 @@
           return
         }
 
-        bindingContext.$route = route
-        bindingContext._routeCtx = true
+        bindingContext._routeCtx = route
 
         var res = route.resolutions()
         if (res) {
@@ -119,7 +117,7 @@
   ko.bindingHandlers.routeView.prefix = 'route:'
 
   function mapQuery(queryParams) {
-    return Object.keys(queryParams).reduce(function(q, k) {
+    return queryParams != null && Object.keys(queryParams).reduce(function(q, k) {
       q[k] = ko.unwrap(queryParams[k])
       return q
     }, {})

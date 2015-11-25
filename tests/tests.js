@@ -229,18 +229,40 @@ describe('CherryTree for Knockout', function() {
 
   it('should expose $leafRoute() on the bindingContext for easy access to the deepest route', function() {
     location.setURL('/forums/1')
-    ko.contextFor(testEl).$leafRoute.should.be.instanceof(Function)
-    should.not.exist(ko.contextFor(testEl).$leafRoute())
+    var rootContext = ko.contextFor(testEl)
+    rootContext.$leafRoute.should.be.instanceof(Function)
+    should.not.exist(rootContext.$leafRoute())
 
     return pollUntilPassing(function() {
-      ko.contextFor(testEl).$leafRoute().name.should.equal('threads')
+      rootContext.$leafRoute().name.should.equal('threads')
       ko.contextFor(testEl.querySelector('section.forums h1')).$leafRoute().name.should.equal('threads')
     }).then(function() {
       location.setURL('/forums/1/threads/2')
       return pollUntilPassing(function() {
-        ko.contextFor(testEl).$leafRoute().name.should.equal('thread')
+        rootContext.$leafRoute().name.should.equal('thread')
         ko.contextFor(testEl.querySelector('section.forums h1')).$leafRoute().name.should.equal('thread')
         ko.contextFor(testEl.querySelector('section.thread p')).$leafRoute().name.should.equal('thread')
+      })
+    })
+  })
+
+  it('should set $route to the current route, not a sibling or parent', function() {
+    location.setURL('/forums/1')
+    var rootContext = ko.contextFor(testEl)
+    should.not.exist(rootContext.$route)
+
+    return pollUntilPassing(function() {
+      should.not.exist(rootContext.$route)
+      ko.contextFor(testEl.querySelector('section.forums')).$route.name.should.equal('forums')
+      ko.contextFor(testEl.querySelector('section.forums > div')).$route.name.should.equal('forums')
+    }).then(function() {
+      location.setURL('/forums/1/threads/2')
+      return pollUntilPassing(function() {
+        should.not.exist(rootContext.$route)
+        ko.contextFor(testEl.querySelector('section.forums')).$route.name.should.equal('forums')
+        ko.contextFor(testEl.querySelector('section.forums > div')).$route.name.should.equal('forums')
+        ko.contextFor(testEl.querySelector('section.thread')).$route.name.should.equal('thread')
+        ko.contextFor(testEl.querySelector('section.thread h4')).$route.name.should.equal('thread')
       })
     })
   })
