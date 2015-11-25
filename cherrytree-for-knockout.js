@@ -118,6 +118,13 @@
   }
   ko.bindingHandlers.routeView.prefix = 'route:'
 
+  function mapQuery(queryParams) {
+    return Object.keys(queryParams).reduce(function(q, k) {
+      q[k] = ko.unwrap(queryParams[k])
+      return q
+    }, {})
+  }
+
   ko.bindingHandlers.routeHref = {
     update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
       if (!router) {
@@ -133,10 +140,7 @@
           params = ko.unwrap(opts.params)
           query = ko.unwrap(opts.query)
           if (query === true) {
-            query = Object.keys(bindingContext.$route.queryParams).reduce(function(q, k) {
-              q[k] = ko.unwrap(bindingContext.$route.queryParams[k])
-              return q
-            }, {})
+            query = mapQuery(bindingContext.$route.queryParams)
           }
         }
 
@@ -219,7 +223,11 @@
           params: transition.params,
           query: transition.query,
           resolutions: ko.observable(),
-          transitionTo: transition.redirectTo
+          transitionTo: function(name, params, query) {
+            return query === true ?
+              transition.redirectTo(name, params, mapQuery(routeData.queryParams)) :
+              transition.redirectTo.apply(transition, arguments)
+          }
         }
 
         var compName = ko.bindingHandlers.routeView.prefix + routeData.name

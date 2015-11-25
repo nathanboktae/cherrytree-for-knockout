@@ -738,5 +738,22 @@ describe('CherryTree for Knockout', function() {
         })
       })
     })
+
+    it('should provide a wrapper around transitionTo to easily include the current bound querystring parameters', function() {
+      location.setURL('/inbox?foo=bar&search=bob')
+      return pollUntilPassing(function() { testEl.querySelector('.inbox a.sort').click }).then(function() {
+        testEl.querySelector('.inbox a.sort').should.have.text('desc')
+
+        location.setURL('/inbox?foo=baz&search=Jane&tags=unread&tags=priority')
+        return pollUntilPassing(function() {
+          location.getURL().should.equal('/inbox?foo=baz&search=Jane&tags=unread&tags=priority')
+        })
+      }).then(function() {
+        ko.contextFor(testEl.querySelector('a.sort')).$route.transitionTo('router-href-test', { someparam: 1 }, true)
+        return pollUntilPassing(function() {
+          location.getURL().should.equal('/href-test/1?sort=desc&search=Jane&tags=unread&tags=priority')
+        })
+      })
+    })
   })
 })
