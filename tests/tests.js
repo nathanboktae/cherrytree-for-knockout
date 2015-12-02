@@ -331,6 +331,32 @@ describe('CherryTree for Knockout', function() {
         testEl.querySelector('section.forums section.forum').should.have.property('foo')
       })
     })
+
+    it('should rerender any component that did not complete its resolutions', function() {
+      forum.resolve = {
+        foo: function(transition) {
+          return (transition.params.threadId || 0) % 2 === 1 ?
+            transition.redirectTo('/forums/' + transition.params.forumId + '/threads/' + (transition.params.threadId - 1))
+            : 'bar'
+        }
+      }
+
+      location.setURL('/forums/1/threads/10')
+      return pollUntilPassing(function() {
+        testEl.querySelector('section.thread h4').should.contain.text('thread 10')
+      }).then(function() {
+        testEl.querySelector('section.forums section.forum').foo = 'bar'
+        location.setURL('/forums/2/threads/9')
+
+        return pollUntilPassing(function() {
+          testEl.querySelector('section.thread h4').should.contain.text('thread 8')
+        })
+      }).then(function() {
+        var forumEl = testEl.querySelector('section.forums section.forum')
+        forumEl.should.not.have.property('foo')
+        ko.contextFor(forumEl).$route.resolutions().foo.should.equal('bar')
+      })
+    })
   })
 
   describe('routeHref', function() {
@@ -472,7 +498,7 @@ describe('CherryTree for Knockout', function() {
         forums.resolve.forums.firstCall.args[0].should.contain.keys(['params', 'query', 'path', 'routes'])
 
         testEl.querySelectorAll('section.forums').length.should.equal(0)
-      }).then(function() {        
+      }).then(function() {
         forumsDeferred.resolve([{ id: 1, name: 'Home forum' }])
         return pollUntilPassing(function() {
           forums.resolve.forums.should.have.been.calledOnce

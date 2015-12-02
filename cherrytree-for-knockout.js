@@ -195,6 +195,8 @@
   function routeEqual(comp, route) {
     if (!comp || !route || comp.name !== route.name) return false
 
+    if ('resolutions' in comp && !comp.resolutions()) return false
+
     return Object.keys(route.params).every(function(param) {
       return comp.params[param] === route.params[param]
     })
