@@ -12,7 +12,7 @@ As you design your webapp, you will begin to identify workflows and pages in a h
 
 cherrytree-for-knockout helps you with all that legwork. You associate components with routes that will load and display where you want in the page (you define that, and anything outside the component for the route, like a breadcrumb bar, account dropdown that is on every page, etc is fully in your control). You can even specify data you need (any function that returns a promise) that will be provided to your component before initializes.
 
-cherrytree-for-knockout is extremely lightweight in the microlib spirit at < 200 lines of code. It has one job and does it well.
+cherrytree-for-knockout is extremely lightweight in the microlib spirit at < 300 lines of code. It has one job and does it well.
 
 ### Example
 
@@ -68,6 +68,10 @@ Notice the `routeView` binding. This is where a component for a route will be re
 Above `main` there is a header which creates bindings based on the current route state. cherrytree-for-knockout will back the `state` property behind an observable, so when the current route changes, depedencies will update, so we can have a simple breadcrumb in this example. `routeHref` is a binding handler that will set the `href` for the route you specify via `router.generate`
 
 Below that is a signout button with a click handler, showing that cherrytree-for-knockout plugs into your existing app how you wish, and ultimately your are still in control of your application's layout and workflow.
+
+As you work with your route components, you'll often want to refer to it in your view, which in simple cases using `$component` will meet your needs. However, as you begin to use more components nested within eachother, using `$parents` is cumbersome and fragile, `$routeComponent` is available and exposed to work as your replacement for `$root` in a traditional one uber view-model structure.
+
+However `$routeComponent` is not supported with asyncrounous components. In general I recommend always declaring your components as syncrounous, as `bindingContext` was designed for the syncrounous binding world, and for symettry with standard bindings that always work syncronously.
 
 ### Two-way binding of Query Parameters
 

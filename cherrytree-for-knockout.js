@@ -176,7 +176,7 @@
 
     var url = router.location.getURL(),
         stringified = router.options.qs.stringify(query)
-    router.location.setURL(url.split('?')[0] + (stringified ? '?' + stringified : ''))
+    router.location.replaceURL(url.split('?')[0] + (stringified ? '?' + stringified : ''))
   })
 
   function updateQueryParams(route, query) {
@@ -202,7 +202,7 @@
     })
   }
 
-  return function knockoutCherrytreeMiddleware(transition) {
+  function knockoutCherrytreeMiddleware(transition) {
     var resolutions = {}, routeResolvers = [], startIdx = 0,
     filteredRoutes = transition.routes.filter(function(route) {
       return route.options && !!(route.options.template || route.options.resolve)
@@ -284,4 +284,8 @@
       return promise ? promise.then(then) : then()
     }, null)
   }
+
+  knockoutCherrytreeMiddleware.activeRoutes = activeRoutes
+
+  return knockoutCherrytreeMiddleware
 })

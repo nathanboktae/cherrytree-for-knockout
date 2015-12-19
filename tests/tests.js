@@ -211,6 +211,7 @@ describe('CherryTree for Knockout', function() {
     location.setURL('/forums/1')
     var activeRoutes = ko.contextFor(testEl).$root.activeRoutes
     ko.isObservable(activeRoutes).should.be.true
+    ko.bindingHandlers.routeView.middleware.activeRoutes.should.equal(activeRoutes)
     should.not.exist(activeRoutes()[0])
 
     return pollUntilPassing(function() {
@@ -714,15 +715,27 @@ describe('CherryTree for Knockout', function() {
     it('should replace the current location history when an observable changes, preserving other querystring values', function() {
       location.setURL('/inbox?foo=bar&search=bob')
       return pollUntilPassing(function() { testEl.querySelector('.inbox a.sort').click }).then(function() {
+        // unfortunately MemoryLocation#replaceURL calls setURL so we have to disambiguate that case
+        origSetURL = location.setURL.bind(location)
+        location.replaceURL = sinon.spy(function (path, options) {
+          if (location.path !== path) {
+            origSetURL(path, options)
+          }
+        })
+        sinon.spy(location, 'setURL')
+
         var sort = testEl.querySelector('.inbox a.sort')
         if (typeof sort.click === 'function') {
           sort.click()
         } else {
           inboxParams.sort('asc')
         }
+
         return pollUntilPassing(function() {
           location.getURL().should.equal('/inbox?foo=bar&search=bob&sort=asc')
           testEl.querySelector('.inbox a.sort').should.have.text('asc')
+          location.replaceURL.should.have.been.calledOnce
+          location.setURL.should.have.not.been.called
         })
       }).then(function() {
         inboxParams.search('Jane')
