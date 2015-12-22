@@ -75,7 +75,18 @@ describe('CherryTree for Knockout', function() {
         template: '<div class="inbox">\
           <input data-bind="textInput: search" />\
           <a class="sort" data-bind="click: function() { sort(sort() === \'asc\' ? \'desc\' : \'asc\') }, text: sort"></a>\
+          <div data-bind="routeView: true"></div>\
         </div>'
+      }, function() {
+        route('unread', {
+          template: '<p class="unread-tags" data-bind="text: \'Tagged \' + $route.queryParams.tags().join(\', \')"></p>'
+        })
+        route('compose', {
+          query: {
+            title: undefined,
+          },
+          template: '<form><input name="title" data-bind="value: $route.queryParams.title" /></form>'
+        })
       })
     })
 
@@ -202,6 +213,7 @@ describe('CherryTree for Knockout', function() {
           forumId: '1',
           threadId: '2'
         },
+        queryParams: {},
         query: {
           unreadOnly: 'true'
         }
@@ -838,6 +850,30 @@ describe('CherryTree for Knockout', function() {
       })
     })
 
+    it('should inherit query string parameters from parent routes', function() {
+      location.setURL('/inbox/unread?tags=promotion&tags=lastweek')
+      return pollUntilPassing(function() {
+        var p = testEl.querySelector('p.unread-tags')
+        p.should.have.text('Tagged promotion, lastweek')
+        ko.contextFor(p).$route.queryParams.sort().should.equal('desc')
+      })
+    })
+
+    it('should use the same observable instances for children, but not expose child queries to parents', function() {
+      location.setURL('/inbox/compose?foo=bar&title=Hello')
+      return pollUntilPassing(function() {
+        testEl.querySelector('input[name="title"]').value.should.equal('Hello')
+      }).then(function() {
+        ko.contextFor(testEl.querySelector('input[name="title"]')).$route.queryParams.sort('asc')
+        return pollUntilPassing(function() {
+          location.getURL().should.equal('/inbox/compose?foo=bar&title=Hello&sort=asc')
+          var sortToggle = testEl.querySelector('.inbox a.sort')
+          sortToggle.should.have.text('asc')
+          ko.contextFor(sortToggle).$route.queryParams.should.not.contain.key('title')
+        })
+      })
+    })
+
     it('should provide a wrapper around transitionTo to easily include the current bound querystring parameters', function() {
       location.setURL('/inbox?foo=bar&search=bob')
       return pollUntilPassing(function() { testEl.querySelector('.inbox a.sort').click }).then(function() {
@@ -850,7 +886,7 @@ describe('CherryTree for Knockout', function() {
       }).then(function() {
         ko.contextFor(testEl.querySelector('a.sort')).$route.transitionTo('router-href-test', { someparam: 1 }, true)
         return pollUntilPassing(function() {
-          location.getURL().should.equal('/href-test/1?sort=desc&search=Jane&tags=unread&tags=priority')
+          location.getURL().should.equal('/href-test/1?search=Jane&tags=unread&tags=priority')
         })
       })
     })

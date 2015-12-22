@@ -95,10 +95,7 @@
           var params = extend({}, res)
           params.$route = extend({}, route)
           delete params.$route.resolutions
-
-          if (route.queryParams) {
-            extend(params, route.queryParams)
-          }
+          extend(params, route.queryParams)
 
           prevRoute = route
           routeComponent({ name: ko.bindingHandlers.routeView.prefix + route.name, params: params })
@@ -123,11 +120,16 @@
   }
   ko.bindingHandlers.routeView.prefix = 'route:'
 
-  function mapQuery(queryParams) {
-    return queryParams != null && Object.keys(queryParams).reduce(function(q, k) {
-      q[k] = ko.unwrap(queryParams[k])
+  function mapQuery(queryParams, query) {
+    return Object.keys(queryParams).reduce(function(q, k) {
+      var val = queryParams[k]()
+      if (val !== queryParams[k].default) {
+        q[k] = val
+      } else {
+        delete q[k]
+      }
       return q
-    }, {})
+    }, query || {})
   }
 
   ko.bindingHandlers.routeHref = {
@@ -160,20 +162,11 @@
   }
 
   ko.computed(function bindToQueryString() {
-    var routes = activeRoutes(),
-    query = routes.reduce(function(q, route) {
-      if (route.queryParams) {
-        Object.keys(route.queryParams).forEach(function(key) {
-          var val = route.queryParams[key]()
-          if (val !== route.queryParams[key].default) {
-            q[key] = val
-          } else {
-            delete q[key]
-          }
-        })
-      }
-      return q
-    }, extend({}, routes.length ? routes[routes.length - 1].query : {}))
+    var routes = activeRoutes()
+    if (!routes.length) return
+
+    var lastRoute = routes[routes.length - 1]
+    query = mapQuery(lastRoute.queryParams, extend({}, lastRoute.query))
 
     if (transitioning) return
     if (transitioning !== false) {
@@ -187,16 +180,14 @@
   })
 
   function updateQueryParams(route, query) {
-    if (route.queryParams) {
-      Object.keys(route.queryParams).forEach(function(key) {
-        var observable = route.queryParams[key]
-        if (key in query) {
-          observable(query[key])
-        } else {
-          observable(Array.isArray(observable.default) ? observable.default.slice() : observable.default)
-        }
-      })
-    }
+    Object.keys(route.queryParams).forEach(function(key) {
+      var observable = route.queryParams[key]
+      if (key in query) {
+        observable(query[key])
+      } else {
+        observable(Array.isArray(observable.default) ? observable.default.slice() : observable.default)
+      }
+    })
   }
 
   function routeEqual(comp, route) {
@@ -210,7 +201,7 @@
   }
 
   function knockoutCherrytreeMiddleware(transition) {
-    var resolutions = {}, routeResolvers = [], startIdx = 0,
+    var resolutions = {}, routeResolvers = [], queryParams = {}, startIdx = 0,
     filteredRoutes = transition.routes.filter(function(route) {
       return route.options && !!(route.options.template || route.options.resolve)
     })
@@ -229,6 +220,7 @@
           name: route.name,
           params: transition.params,
           query: transition.query,
+          queryParams: queryParams,
           resolutions: ko.observable(),
           transitionTo: function(name, params, query) {
             return query === true ?
@@ -244,21 +236,22 @@
 
         var query = route.options.query
         if (query) {
-          routeData.queryParams = Object.keys(query).reduce(function(q, key) {
+          Object.keys(query).forEach(function(key) {
             var queryVal = routeData.query[key], defaultVal = query[key]
             if (!Array.isArray(defaultVal)) {
-              q[key] = ko.observable(queryVal !== undefined ? queryVal : defaultVal)
-              q[key].default = defaultVal
+              queryParams[key] = ko.observable(queryVal !== undefined ? queryVal : defaultVal)
+              queryParams[key].default = defaultVal
             } else {
               if (queryVal) {
-                q[key] = ko.observableArray(Array.isArray(queryVal) ? queryVal : [queryVal])
+                queryParams[key] = ko.observableArray(Array.isArray(queryVal) ? queryVal : [queryVal])
               } else {
-                q[key] = ko.observableArray(defaultVal)
+                queryParams[key] = ko.observableArray(defaultVal)
               }
-              q[key].default = defaultVal.splice()
+              queryParams[key].default = defaultVal.splice()
             }
-            return q
-          }, {})
+          })
+
+          queryParams = extend({}, queryParams)
         }
       }
 
