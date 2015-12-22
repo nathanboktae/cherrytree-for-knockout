@@ -766,7 +766,7 @@ describe('CherryTree for Knockout', function() {
       location.setURL('/inbox?foo=bar&search=bob')
       return pollUntilPassing(function() { testEl.querySelector('.inbox a.sort').click }).then(function() {
         // unfortunately MemoryLocation#replaceURL calls setURL so we have to disambiguate that case
-        origSetURL = location.setURL.bind(location)
+        var origSetURL = location.setURL.bind(location)
         location.replaceURL = sinon.spy(function (path, options) {
           if (location.path !== path) {
             origSetURL(path, options)

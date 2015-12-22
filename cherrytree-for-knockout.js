@@ -165,8 +165,8 @@
     var routes = activeRoutes()
     if (!routes.length) return
 
-    var lastRoute = routes[routes.length - 1]
-    query = mapQuery(lastRoute.queryParams, extend({}, lastRoute.query))
+    var lastRoute = routes[routes.length - 1],
+        query = mapQuery(lastRoute.queryParams, extend({}, lastRoute.query))
 
     if (transitioning) return
     if (transitioning !== false) {
