@@ -16,7 +16,9 @@ describe('CherryTree for Knockout', function() {
     forums = {
       path: 'forums',
       template: '<section class="forums"><h1>Viewing all forums</h1><div data-bind="routeView: true"></div></section>',
-      viewModel: function() {},
+      viewModel: function() {
+        this.forumsViewModel = true
+      },
       synchronous: true
     }
 
@@ -207,24 +209,60 @@ describe('CherryTree for Knockout', function() {
     })
   })
 
-  it('should expose activeRoutes() with the current active route name, query, param, and resolutions', function() {
-    location.setURL('/forums/1')
+  it('should expose activeRoutes() with the current active route details, and the instance when it resolves', function() {
     var activeRoutes = ko.contextFor(testEl).$root.activeRoutes
+
     ko.isObservable(activeRoutes).should.be.true
     ko.bindingHandlers.routeView.middleware.activeRoutes.should.equal(activeRoutes)
+    activeRoutes().should.be.empty
     should.not.exist(activeRoutes()[0])
 
+    var snapshots = []
+    var sub = activeRoutes.subscribe(function(items) {
+      snapshots.push(items.slice())
+    })
+
+    thread.resolve = {
+      foo: function() {
+        return Promise.resolve('bar')
+      }
+    }
+
+    location.setURL('/forums/1')
     return pollUntilPassing(function() {
+      activeRoutes().length.should.equal(2)
+
+      snapshots.length.should.equal(3)
+      snapshots.map(function(s) { return s.length }).should.deep.equal([2, 2, 2])
+
+      should.not.exist(snapshots[0][0].component)
+      should.not.exist(snapshots[0][1].component)
+      snapshots[1][0].component.forumsViewModel.should.be.true
+      should.not.exist(snapshots[1][1].component)
+      snapshots[2][0].component.forumsViewModel.should.be.true
+      snapshots[2][1].component.title.should.equal('Viewing forum {0}')
+
+      snapshots[0][0].should.contain.keys(['params', 'query', 'resolutions'])
+
+      snapshots[0][1].params.forumId.should.equal('1')
+      snapshots[0].map(function(r) { return r.name }).should.deep.equal(['forums', 'threads'])
       activeRoutes().map(function(r) { return r.name }).should.deep.equal(['forums', 'threads'])
-      activeRoutes()[1].params.forumId.should.equal('1')
-      activeRoutes()[1].should.contain.keys(['params', 'query'])
+      snapshots[0][1].params.forumId.should.equal('1')
+      snapshots[0][1].should.contain.keys(['params', 'query'])
     }).then(function() {
       location.setURL('/forums/1/threads/2')
-      should.not.exist(activeRoutes()[2])
+
       return pollUntilPassing(function() {
-        activeRoutes().map(function(r) { return r.name }).should.deep.equal(['forums', 'threads', 'thread'])
-        activeRoutes()[2].params.forumId.should.equal('1')
+        snapshots.length.should.equal(5)
+        snapshots[3].map(function(r) { return r.name }).should.deep.equal(['forums', 'threads', 'thread'])
+        snapshots[3][2].params.forumId.should.equal('1')
+        should.not.exist(snapshots[3][2].component)
+        snapshots[3][2].resolutions().should.be.ok
+        snapshots[4][2].component.title.should.equal('Viewing thread {0}')
+        snapshots[4][2].resolutions().foo.should.equal('bar')
       })
+    }).then(function() {
+      sub.dispose()
     })
   })
 

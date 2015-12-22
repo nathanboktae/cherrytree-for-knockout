@@ -12,7 +12,7 @@ As you design your webapp, you will begin to identify workflows and pages in a h
 
 cherrytree-for-knockout helps you with all that legwork. You associate components with routes that will load and display where you want in the page (you define that, and anything outside the component for the route, like a breadcrumb bar, account dropdown that is on every page, etc is fully in your control). You can even specify data you need (any function that returns a promise) that will be provided to your component before initializes.
 
-cherrytree-for-knockout is extremely lightweight in the microlib spirit at < 300 lines of code. It has one job and does it well.
+cherrytree-for-knockout is very lightweight, focused on one single responsibility, with under 350 lines of code. It has one job and does it well.
 
 ### Example
 

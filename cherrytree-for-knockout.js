@@ -8,7 +8,9 @@
     ko.bindingHandlers.routeView.middleware = middleware
   }
 })(function(ko) {
-  var activeRoutes = ko.observableArray(), transitioning, router
+  var transitioning, router,
+      activeRoutes = ko.observableArray(),
+      activeComponents = ko.observableArray()
 
   ko.components.register('route-blank', {
     template: '<div></div>',
@@ -40,6 +42,11 @@
         ctx.$route = ctx._routeCtx
         delete ctx._routeCtx
         ctx.$routeComponent = dataItemOrAccessor
+
+        var idx = activeRoutes.peek().indexOf(ctx.$route)
+        if (idx > -1) {
+          activeComponents.splice(idx, 1, dataItemOrAccessor)
+        }
       }
       return retval
     })
@@ -54,7 +61,7 @@
           bindingContext.$root.router = r
         }
         if (!bindingContext.$root.activeRoutes) {
-          bindingContext.$root.activeRoutes = activeRoutes
+          bindingContext.$root.activeRoutes = knockoutCherrytreeMiddleware.activeRoutes
           bindingContext.$leafRoute = function() {
             return activeRoutes()[activeRoutes().length - 1]
           }
@@ -277,6 +284,8 @@
       return routeData
     }).filter(function(i) { return !!i })
 
+    // using a peek() to avoid an extra nofication
+    activeComponents.peek().splice(startIdx)
     activeRoutes.splice.apply(activeRoutes, [startIdx, activeRoutes().length - startIdx].concat(newRoutes))
     transitioning = false
 
@@ -285,7 +294,17 @@
     }, null)
   }
 
-  knockoutCherrytreeMiddleware.activeRoutes = activeRoutes
+  knockoutCherrytreeMiddleware.activeRoutes = ko.pureComputed(function() {
+    return activeRoutes().map(function(r, idx) {
+      return {
+        name: r.name,
+        params: r.params,
+        query: r.query,
+        resolutions: r.resolutions,
+        component: activeComponents()[idx]
+      }
+    })
+  })
 
   return knockoutCherrytreeMiddleware
 })
