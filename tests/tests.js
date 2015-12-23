@@ -856,6 +856,13 @@ describe('CherryTree for Knockout', function() {
         var p = testEl.querySelector('p.unread-tags')
         p.should.have.text('Tagged promotion, lastweek')
         ko.contextFor(p).$route.queryParams.sort().should.equal('desc')
+      }).then(function() {
+        location.setURL('/inbox/compose?search=itinerary&title=Hi')
+        return pollUntilPassing(function() {
+          var ctx = ko.contextFor(testEl.querySelector('input[name="title"]'))
+          ctx.$route.queryParams.search().should.equal('itinerary')
+          ctx.$route.queryParams.title().should.equal('Hi')
+        })
       })
     })
 

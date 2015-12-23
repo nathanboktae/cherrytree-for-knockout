@@ -209,8 +209,13 @@
 
     while (routeEqual(activeRoutes()[startIdx], filteredRoutes[startIdx])) {
       Object.assign(resolutions, activeRoutes()[startIdx].resolutions())
-      updateQueryParams(activeRoutes()[startIdx], transition.query)
       startIdx++
+    }
+
+    var lastSkipped = activeRoutes()[startIdx - 1]
+    if (lastSkipped) {
+      transition.query && updateQueryParams(lastSkipped, transition.query)
+      queryParams = extend({}, lastSkipped.queryParams)
     }
 
     var newRoutes = filteredRoutes.slice(startIdx).map(function(route) {
