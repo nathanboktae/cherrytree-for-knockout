@@ -850,6 +850,29 @@ describe('CherryTree for Knockout', function() {
       })
     })
 
+    it('should allow for extention of objects in query paramater values and take dependencies on them', function() {
+      location.setURL('/inbox?tags[name]=unread')
+      var tag = {}, name = ko.observable()
+      Object.defineProperty(tag, 'name', { get: name, enumerable: true })
+
+      return pollUntilPassing(function() { testEl.querySelector('.inbox a.sort').click }).then(function() {
+        var tags = ko.contextFor(testEl.querySelector('.inbox a.sort')).$route.queryParams.tags
+        tags.push(tag)
+
+        return router.state.activeTransition
+      }).then(function() {
+        name('spam')
+        return pollUntilPassing(function() {
+          location.getURL().should.equal('/inbox?tags%5B0%5D%5Bname%5D=unread&tags%5B1%5D%5Bname%5D=spam')
+        })
+      }).then(function() {
+        name('bar')
+        return pollUntilPassing(function() {
+          location.getURL().should.equal('/inbox?tags%5B0%5D%5Bname%5D=unread&tags%5B1%5D%5Bname%5D=bar')
+        })
+      })
+    })
+
     it('should inherit query string parameters from parent routes', function() {
       location.setURL('/inbox/unread?tags=promotion&tags=lastweek')
       return pollUntilPassing(function() {

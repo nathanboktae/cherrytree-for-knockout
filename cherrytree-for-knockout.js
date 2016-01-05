@@ -8,7 +8,7 @@
     ko.bindingHandlers.routeView.middleware = middleware
   }
 })(function(ko) {
-  var transitioning, router,
+  var transitioning, pendingQueryStringWrite, router,
       activeRoutes = ko.observableArray(),
       activeComponents = ko.observableArray()
 
@@ -166,7 +166,8 @@
     if (!routes.length) return
 
     var lastRoute = routes[routes.length - 1],
-        query = mapQuery(lastRoute.queryParams, extend({}, lastRoute.query))
+        query = mapQuery(lastRoute.queryParams, extend({}, lastRoute.query)),
+        stringified = router.options.qs.stringify(query)
 
     if (transitioning) return
     if (transitioning !== false) {
@@ -174,12 +175,16 @@
       return
     }
 
-    var url = router.location.getURL(),
-        stringified = router.options.qs.stringify(query)
+    var url = router.location.getURL()
+    pendingQueryStringWrite = true
     router.location.replaceURL(url.split('?')[0] + (stringified ? '?' + stringified : ''))
   })
 
   function updateQueryParams(route, query) {
+    if (pendingQueryStringWrite) {
+      pendingQueryStringWrite = false
+      return
+    }
     Object.keys(route.queryParams).forEach(function(key) {
       var observable = route.queryParams[key]
       if (key in query) {
