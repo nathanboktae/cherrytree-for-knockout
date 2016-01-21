@@ -2,9 +2,7 @@
 
 ### Component-based hiearchial routing for [Knockout](http://knockoutjs.com) via the [CherryTree](https://github.com/QubitProducts/cherrytree) router
 
-[![Build Status](https://secure.travis-ci.org/nathanboktae/cherrytree-for-knockout.png?branch=master)](https://travis-ci.org/nathanboktae/cherrytree-for-knockout)
-
-[![Join the chat at https://gitter.im/nathanboktae/cherrytree-for-knockout](https://badges.gitter.im/nathanboktae/cherrytree-for-knockout.svg)](https://gitter.im/nathanboktae/cherrytree-for-knockout?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Build Status](https://secure.travis-ci.org/nathanboktae/cherrytree-for-knockout.png?branch=master)](https://travis-ci.org/nathanboktae/cherrytree-for-knockout) [![Join the chat at https://gitter.im/nathanboktae/cherrytree-for-knockout](https://badges.gitter.im/nathanboktae/cherrytree-for-knockout.svg)](https://gitter.im/nathanboktae/cherrytree-for-knockout?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 [![SauceLabs Test Status](https://saucelabs.com/browser-matrix/Cherrytree-ko.svg)](https://saucelabs.com/u/Cherrytree-ko)
 
