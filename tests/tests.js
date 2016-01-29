@@ -9,8 +9,7 @@ describe('CherryTree for Knockout', function() {
       template: '<section class="login"><h1 data-bind="text: title"></h1></section>',
       viewModel: function() {
         this.title = 'please login'
-      },
-      synchronous: true
+      }
     }
 
     forums = {
@@ -18,8 +17,7 @@ describe('CherryTree for Knockout', function() {
       template: '<section class="forums"><h1>Viewing all forums</h1><div data-bind="routeView: true"></div></section>',
       viewModel: function() {
         this.forumsViewModel = true
-      },
-      synchronous: true
+      }
     }
 
     forum = {
@@ -27,19 +25,25 @@ describe('CherryTree for Knockout', function() {
       template: '<section class="forum"><h2 data-bind="text: title.replace(\'{0}\', $route.params.forumId)"></h2><div data-bind="routeView: true"></div></section>',
       viewModel: function() {
         this.title = 'Viewing forum {0}'
-      },
-      synchronous: true
+      }
     }
 
     thread = {
       path: 'threads/:threadId',
-      template: '<section class="thread">\
-        <h4><a data-bind="text: title.replace(\'{0}\', $route.params.threadId), routeHref: \'threads\'"></a></h4>\
-        <p data-bind="text: JSON.stringify($route)"></p></section>',
-      viewModel: function() {
-        this.title = 'Viewing thread {0}'
-      },
-      synchronous: true
+      template: '\
+        <section class="thread">\
+          <nav><a data-bind="routeHref: \'threads\'"></a></nav>\
+          <h4 data-bind="text: title.replace(\'{0}\', $route.params.threadId)"></h4>\
+          <p data-bind="text: JSON.stringify($route)"></p>\
+          <ul data-bind="foreach: threads">\
+            <li data-bind="text: title"></li>\
+          </ul>\
+        </section>',
+      viewModel: function(params, route) {
+        route.should.contain.keys(['query', 'params', 'transitionTo'])
+        this.title = params.forum ? 'Viewing threads for forum ' + params.forum.name : 'Viewing thread {0}'
+        this.threads = params.threads || []
+      }
     }
 
     router.map(function(route) {
@@ -50,7 +54,6 @@ describe('CherryTree for Knockout', function() {
         })
       })
       route('router-href-test', {
-        synchronous: true,
         path: 'href-test/:someparam',
         query: {
           foo: undefined,
@@ -63,7 +66,6 @@ describe('CherryTree for Knockout', function() {
           </nav>'
       })
       route('inbox', {
-        synchronous: true,
         query: {
           sort: 'desc',
           search: undefined,
@@ -137,14 +139,14 @@ describe('CherryTree for Knockout', function() {
     testEl.querySelectorAll('section').length.should.equal(0)
   })
 
-  it('should automatically register a component and render it', function() {
+  it('should render a simple route when navigated to', function() {
     location.setURL('/login')
     return pollUntilPassing(function() {
       testEl.querySelector('section.login h1').textContent.should.equal('please login')
     })
   })
 
-  it('should render nested components with route params', function() {
+  it('should render nested routes with route params', function() {
     location.setURL('/forums/1')
     return pollUntilPassing(function() {
       testEl.querySelector('section.forums section.forum').should.be.ok
@@ -185,23 +187,6 @@ describe('CherryTree for Knockout', function() {
     })
   })
 
-  it('should not register components already registered', function() {
-    ko.components.unregister('route:login')
-    ko.components.register('route:login', {
-      template: login.template,
-      viewModel: function() {
-        this.title = 'The login form!'
-      },
-      synchronous: true
-    })
-
-    location.setURL('/login')
-    return pollUntilPassing(function() {
-      testEl.querySelector('section.login').should.be.ok
-      testEl.querySelector('section.login h1').textContent.should.equal('The login form!')
-    })
-  })
-
   it('should expose $route on the bindingContext with the route name at that depth, params, and query', function() {
     location.setURL('/forums/1/threads/2?unreadOnly=true')
     return pollUntilPassing(function() {
@@ -216,6 +201,10 @@ describe('CherryTree for Knockout', function() {
         queryParams: {},
         query: {
           unreadOnly: 'true'
+        },
+        $root: {
+          title: 'Viewing thread {0}',
+          threads: []
         }
       })
     })
@@ -231,12 +220,24 @@ describe('CherryTree for Knockout', function() {
 
     var snapshots = []
     var sub = activeRoutes.subscribe(function(items) {
-      snapshots.push(items.slice())
+      snapshots.push(items.map(function(i) {
+        i.should.contain.keys(['params', 'query', 'queryParams', 'resolutions'])
+        return {
+          name: i.name,
+          $root: i.$root,
+          params: i.params,
+          resolutions: i.resolutions()
+        }
+      }))
     })
 
-    thread.resolve = {
+    forum.resolve = {
       foo: function() {
-        return Promise.resolve('bar')
+        return new Promise(function(r) {
+          setTimeout(function() {
+            r('bar')
+          }, 50)
+        })
       }
     }
 
@@ -247,20 +248,17 @@ describe('CherryTree for Knockout', function() {
       snapshots.length.should.equal(3)
       snapshots.map(function(s) { return s.length }).should.deep.equal([2, 2, 2])
 
-      should.not.exist(snapshots[0][0].component)
-      should.not.exist(snapshots[0][1].component)
-      snapshots[1][0].component.forumsViewModel.should.be.true
-      should.not.exist(snapshots[1][1].component)
-      snapshots[2][0].component.forumsViewModel.should.be.true
-      snapshots[2][1].component.title.should.equal('Viewing forum {0}')
-
-      snapshots[0][0].should.contain.keys(['params', 'query', 'resolutions'])
+      should.not.exist(snapshots[0][0].$root)
+      should.not.exist(snapshots[0][1].$root)
+      snapshots[1][0].$root.forumsViewModel.should.be.true
+      should.not.exist(snapshots[1][1].$root)
+      snapshots[2][0].$root.forumsViewModel.should.be.true
+      snapshots[2][1].$root.title.should.equal('Viewing forum {0}')
 
       snapshots[0][1].params.forumId.should.equal('1')
       snapshots[0].map(function(r) { return r.name }).should.deep.equal(['forums', 'threads'])
       activeRoutes().map(function(r) { return r.name }).should.deep.equal(['forums', 'threads'])
       snapshots[0][1].params.forumId.should.equal('1')
-      snapshots[0][1].should.contain.keys(['params', 'query'])
     }).then(function() {
       location.setURL('/forums/1/threads/2')
 
@@ -268,10 +266,10 @@ describe('CherryTree for Knockout', function() {
         snapshots.length.should.equal(5)
         snapshots[3].map(function(r) { return r.name }).should.deep.equal(['forums', 'threads', 'thread'])
         snapshots[3][2].params.forumId.should.equal('1')
-        should.not.exist(snapshots[3][2].component)
-        snapshots[3][2].resolutions().should.be.ok
-        snapshots[4][2].component.title.should.equal('Viewing thread {0}')
-        snapshots[4][2].resolutions().foo.should.equal('bar')
+        should.not.exist(snapshots[3][2].$root)
+        snapshots[3][2].resolutions.should.be.ok
+        snapshots[4][2].$root.title.should.equal('Viewing thread {0}')
+        snapshots[4][2].resolutions.foo.should.equal('bar')
       })
     }).then(function() {
       sub.dispose()
@@ -318,20 +316,17 @@ describe('CherryTree for Knockout', function() {
     })
   })
 
-  it('should expose the route component as $routeComponent', function() {
-    ko.components.register('some-component', {
-      template: '<div class="route-comp-test" data-bind="text: $routeComponent.foo"></div>'
-    })
+  it('should expose the route viewModel instance as $route.$root', function() {
     router.map(function(route) {
-      route('routecomp', {
+      route('myroute', {
         viewModel: function() {
           this.foo = 'bar'
         },
-        template: '<some-component></some-component>'
+        template: '<div class="route-comp-test" data-bind="text: $route.$root.foo"></div>'
       })
     })
 
-    location.setURL('/routecomp')
+    location.setURL('/myroute')
     return pollUntilPassing(function() {
       testEl.querySelector('.route-comp-test').textContent.should.equal('bar')
     })
@@ -453,7 +448,7 @@ describe('CherryTree for Knockout', function() {
     it('should accept just a string to use as the route name', function() {
       location.setURL('/forums/1/threads/2')
       return pollUntilPassing(function() {
-        testEl.querySelector('section.thread h4 a').should.have.attr('href', '/forums/1')
+        testEl.querySelector('section.thread nav a').should.have.attr('href', '/forums/1')
       })
     })
 
@@ -508,7 +503,6 @@ describe('CherryTree for Knockout', function() {
         })
       }
 
-      delete thread.viewModel
       thread.resolve = {
         forum: function(transition, resolutions) {
           return resolutions.forums[transition.params.forumId]
@@ -516,29 +510,6 @@ describe('CherryTree for Knockout', function() {
         threads: sinon.spy(function() {
           return threadsDeferred.promise
         })
-      }
-      thread.viewModel = {
-        createViewModel: function(params) {
-          params.$route.should.contain.keys(['query', 'params', 'transitionTo'])
-          return {
-            title: 'Viewing threads for forum ' + params.forum.name,
-            threads: params.threads
-          }
-        }
-      }
-      thread.template = '\
-        <section class="thread">\
-          <h4 data-bind="text: title"></h4>\
-          <ul data-bind="foreach: threads">\
-            <li data-bind="text: title"></li>\
-          </ul>\
-        </section>'
-
-      if (ko.components.isRegistered('route:forums')) {
-        ko.components.unregister('route:forums')
-      }
-      if (ko.components.isRegistered('route:thread')) {
-        ko.components.unregister('route:thread')
       }
     })
 
@@ -559,11 +530,8 @@ describe('CherryTree for Knockout', function() {
       })
     })
 
-    it('can have the loading component replaced by a custom component', function() {
-      ko.components.unregister('route-loading')
-      ko.components.register('route-loading', {
-        template: '<blink class="route-loading">loading!!!</blink>'
-      })
+    it('can have custom loading template by provided', function() {
+      ko.bindingHandlers.routeView.routeLoading = ko.utils.parseHtmlFragment('<blink>loading!!!</blink>')[0]
 
       router.map(function(route) {
         route('messages', {
@@ -585,16 +553,13 @@ describe('CherryTree for Knockout', function() {
         route('email-campaign', {
           path: 'email-campaign/:campaign/create',
           template: '<div class="campaign"></div>',
-          viewModel: {
-            createViewModel: function(params) {
-              try {
-                params.$route.params.campaign.should.equal('v2launch')
-                params.$route.query.should.deep.equal({ title: 'Check out our new version!' })
-                setTimeout(done, 1)
-              } catch (e) {
-                done(e)
-              }
-              return {}
+          viewModel: function(params, route) {
+            try {
+              route.params.campaign.should.equal('v2launch')
+              route.query.should.deep.equal({ title: 'Check out our new version!' })
+              setTimeout(done, 1)
+            } catch (e) {
+              done(e)
             }
           }
         })
@@ -712,18 +677,14 @@ describe('CherryTree for Knockout', function() {
         }, function() {
           route('profile', {
             path: '/profile',
-            viewModel: {
-              createViewModel: profileViewModel
-            },
+            viewModel: profileViewModel,
             template: '<div class="profile"></div>'
           })
           route('order-history', {
             resolve: {
               orderHistory: function() { return orderHistoryDeferred.promise }
             },
-            viewModel: {
-              createViewModel: orderHistoryViewModel
-            },
+            viewModel: orderHistoryViewModel,
             template: '<div class="order-history"></div>'
           })
         })
@@ -732,7 +693,7 @@ describe('CherryTree for Knockout', function() {
       location.setURL('/profile')
       accountDeferrred.resolve({ name: 'Bob' })
       return pollUntilPassing(function() {
-        profileViewModel.should.have.been.calledOnce
+        profileViewModel.should.have.been.calledOnce.and.calledWithNew.mmmkay
         profileViewModel.firstCall.args[0].account.should.deep.equal({ name: 'Bob' })
       })
     })

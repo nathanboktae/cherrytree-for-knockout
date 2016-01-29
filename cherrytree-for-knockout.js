@@ -8,7 +8,10 @@
     ko.bindingHandlers.routeView.middleware = middleware
   }
 })(function(ko) {
-  var transitioning, pendingQueryStringWrite, router,
+  var transitioning, pendingQueryStringWrite,
+      router,
+      templates = {},
+      viewModels = {},
       activeRoutes = ko.observableArray()
 
   function extend(target, obj) {
@@ -42,35 +45,9 @@
         contextIter = contextIter.$parentContext
       }
 
-      ko.computed(function() {
-        var route = activeRoutes()[depth]
-        if (route == prevRoute) return
-
-        if (!route) {
-          ko.utils.emptyDomNode(element)
-          return
-        }
-
-        var res = route.resolutions()
-        if (res) {
-          var params = extend({}, res),
-              routeCopy = extend({}, route)
-          delete routeCopy.resolutions
-          extend(params, route.queryParams)
-
-          route.$root = new route.viewModel(params, routeCopy)
-          prevRoute = route
-
-          ko.utils.setDomNodeChildren(element, ko.utils.cloneNodes(route.templateNodes))
-          ko.applyBindingsToDescendants(bindingContext.extend({ $route: route }), element)
-        } else {
-          ko.utils.setDomNodeChildren(element, [routeLoading.cloneNode(true)])
-        }
-      }, null, { disposeWhenNodeIsRemoved: element }).extend({ rateLimit: 5 })
-
-      if (element.nodeType !== 8) {
-        ko.computed(function() {
-          var newClass = routeComponent().name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()
+      function setRouteName(name) {
+        if (element.nodeType !== 8) {
+          var newClass = name && name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()
           if (newClass === routeClass) return
           if (routeClass) {
             element.classList.remove(routeClass)
@@ -78,12 +55,52 @@
 
           routeClass = newClass
           element.classList.add(routeClass)
-        }, null, { disposeWhenNodeIsRemoved: element })
+        }
       }
+
+      ko.computed(function() {
+        var route = activeRoutes()[depth]
+        if (route == prevRoute) return
+
+        if (!route) {
+          ko.utils.emptyDomNode(element)
+          setRouteName()
+          return
+        }
+
+        var res = route.resolutions()
+        if (res) {
+          if (viewModels[route.name]) {
+            var params = extend({}, res),
+                routeCopy = extend({}, route)
+            delete routeCopy.resolutions
+            extend(params, route.queryParams)
+
+            route.$root = new viewModels[route.name](params, routeCopy, element)
+          }
+          prevRoute = route
+
+          ko.utils.setDomNodeChildren(element, ko.utils.cloneNodes(templates[route.name]))
+          var childCtx = bindingContext.createChildContext(route.$root, null, function(context) {
+            context.$route = route
+          })
+          ko.applyBindingsToDescendants(childCtx, element)
+
+          setRouteName('route-' + route.name)
+          if (route.$root) {
+            knockoutCherrytreeMiddleware.activeRoutes.notifySubscribers(activeRoutes().slice())
+          }
+        } else {
+          ko.utils.setDomNodeChildren(element, [ko.bindingHandlers.routeView.routeLoading.cloneNode(true)])
+          setRouteName('route-loading')
+        }
+      }, null, { disposeWhenNodeIsRemoved: element }).extend({ rateLimit: 5 })
 
       return { controlsDescendantBindings: true }
     }
   }
+  ko.virtualElements.allowedBindings.routeView = true
+
   ko.bindingHandlers.routeView.routeLoading = document.createElement('div')
   ko.bindingHandlers.routeView.routeLoading.className = 'route-loading'
 
@@ -193,6 +210,11 @@
     var newRoutes = filteredRoutes.slice(startIdx).map(function(route) {
       var routeData
       if (route.options.template) {
+        if (!templates[route.name]) {
+          templates[route.name] = ko.utils.parseHtmlFragment(route.options.template)
+          viewModels[route.name] = route.options.viewModel
+        }
+
         routeData = {
           name: route.name,
           params: transition.params,
@@ -204,10 +226,6 @@
               transition.redirectTo(name, params, mapQuery(routeData.queryParams)) :
               transition.redirectTo.apply(transition, arguments)
           }
-        }
-
-        if (!route.options.templateNodes) {
-          route.options.templateNodes = ko.utils.parseHtmlFragment(route.options.template)
         }
 
         var query = route.options.query
@@ -253,8 +271,6 @@
       return routeData
     }).filter(function(i) { return !!i })
 
-    // using a peek() to avoid an extra nofication
-    activeComponents.peek().splice(startIdx)
     activeRoutes.splice.apply(activeRoutes, [startIdx, activeRoutes().length - startIdx].concat(newRoutes))
     transitioning = false
 
@@ -263,7 +279,9 @@
     }, null)
   }
 
-  knockoutCherrytreeMiddleware.activeRoutes = activeRoutes
+  knockoutCherrytreeMiddleware.activeRoutes = ko.pureComputed(function() {
+    return activeRoutes().slice()
+  })
 
   return knockoutCherrytreeMiddleware
 })

@@ -20,6 +20,7 @@
   <script>
     mocha.ui('bdd')
     mocha.timeout(4000)
+    mocha.globals('global_test_results')
     mocha.checkLeaks()
     var should = chai.should()
     chai.config.includeStack = true
