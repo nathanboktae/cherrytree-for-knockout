@@ -4,7 +4,7 @@
   "authors": [
     "Nathan Black <nathan@nathanblack.org>"
   ],
-  "description": "Use knockout components with CherryTree hiearchial routing",
+  "description": "Hiearchial Routing in Knockout with CherryTree",
   "main": "cherrytree-for-knockout.js",
   "moduleType": [
     "amd",
@@ -15,7 +15,6 @@
     "knockout",
     "cherrytree",
     "routes",
-    "components",
     "web-components",
     "routing",
     "angular-ui-router"
@@ -28,6 +27,10 @@
     "test",
     "tests"
   ],
+  "dependencies": {
+    "cherrytree": "^2.0.0",
+    "knockout": "^3.0.0"
+  },
   "devDependencies": {
     "chai-dom": "~1.0.0"
   }

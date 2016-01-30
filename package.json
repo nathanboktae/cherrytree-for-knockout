@@ -1,7 +1,7 @@
 {
   "name": "cherrytree-for-knockout",
-  "version": "0.4.3",
-  "description": "Use knockout components with CherryTree hiearchial routing",
+  "version": "0.5.0",
+  "description": "Hiearchial Routing in Knockout with CherryTree",
   "main": "cherrytree-for-knockout.js",
   "scripts": {
     "test": "mocha-phantomjs tests/tests.html && (node -e \"require('grunt').tasks(['test']);\" || true)"
@@ -26,7 +26,7 @@
   },
   "homepage": "https://github.com/nathanboktae/cherrytree-for-knockout#readme",
   "dependencies": {
-    "knockout": "^3.3.0"
+    "knockout": "^3.0.0"
   },
   "devDependencies": {
     "babel-core": "^5.8.23",
