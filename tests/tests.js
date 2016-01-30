@@ -17,7 +17,11 @@ describe('CherryTree for Knockout', function() {
       template: '<section class="forums"><h1>Viewing all forums</h1><!-- ko routeView: true --><!-- /ko --></section>',
       viewModel: function() {
         this.forumsViewModel = true
-      }
+        this.dispose = function() {
+          forums.disposeCount++
+        }
+      },
+      disposeCount: 0
     }
 
     forum = {
@@ -43,7 +47,11 @@ describe('CherryTree for Knockout', function() {
         route.should.contain.keys(['query', 'params', 'transitionTo'])
         this.title = params.forum ? 'Viewing threads for forum ' + params.forum.name : 'Viewing thread {0}'
         this.threads = params.threads || []
-      }
+        this.dispose = function() {
+          thread.disposeCount++
+        }
+      },
+      disposeCount: 0
     }
 
     router.map(function(route) {
@@ -184,6 +192,32 @@ describe('CherryTree for Knockout', function() {
         testEl.className.should.equal('existing-class route-i-love-beer--')
         testEl.querySelector('.kewl').className.should.equal('kewl route----ch33rs--')
       })
+    })
+  })
+
+  it('should call dispose of view models that have a dispose function', function() {
+    location.setURL('/forums/1/threads/2')
+    return pollUntilPassing(function() {
+        testEl.querySelector('section.forums section.forum section.thread').should.be.ok
+    }).then(function() {
+      forums.disposeCount.should.equal(0)
+      thread.disposeCount.should.equal(0)
+      location.setURL('/forums/1/threads/4')
+
+      return pollUntilPassing(function() {
+        testEl.querySelector('section.thread h4').textContent.should.equal('Viewing thread 4')
+      })
+    }).then(function() {
+      forums.disposeCount.should.equal(0)
+      thread.disposeCount.should.equal(1)
+      location.setURL('/login')
+
+      return pollUntilPassing(function() {
+        testEl.querySelector('section.login h1').textContent.should.equal('please login')
+      })
+    }).then(function() {
+      forums.disposeCount.should.equal(1)
+      thread.disposeCount.should.equal(2)
     })
   })
 

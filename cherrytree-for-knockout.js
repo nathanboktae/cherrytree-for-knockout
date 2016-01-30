@@ -58,10 +58,17 @@
         }
       }
 
+      function disposePrevRouteIfNeeded() {
+        if (prevRoute && prevRoute.$root && typeof prevRoute.$root.dispose === 'function') {
+          prevRoute.$root.dispose()
+        }
+      }
+
       ko.computed(function() {
         var route = activeRoutes()[depth]
         if (route == prevRoute) return
 
+        disposePrevRouteIfNeeded()
         if (!route) {
           ko.utils.emptyDomNode(element)
           setRouteName()
@@ -95,6 +102,8 @@
           setRouteName('route-loading')
         }
       }, null, { disposeWhenNodeIsRemoved: element }).extend({ rateLimit: 5 })
+
+      ko.utils.domNodeDisposal.addDisposeCallback(element, disposePrevRouteIfNeeded)
 
       return { controlsDescendantBindings: true }
     }
