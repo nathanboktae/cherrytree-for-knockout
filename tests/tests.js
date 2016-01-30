@@ -14,7 +14,7 @@ describe('CherryTree for Knockout', function() {
 
     forums = {
       path: 'forums',
-      template: '<section class="forums"><h1>Viewing all forums</h1><div data-bind="routeView: true"></div></section>',
+      template: '<section class="forums"><h1>Viewing all forums</h1><!-- ko routeView: true --><!-- /ko --></section>',
       viewModel: function() {
         this.forumsViewModel = true
       }
@@ -303,13 +303,13 @@ describe('CherryTree for Knockout', function() {
     return pollUntilPassing(function() {
       should.not.exist(rootContext.$route)
       ko.contextFor(testEl.querySelector('section.forums')).$route.name.should.equal('forums')
-      ko.contextFor(testEl.querySelector('section.forums > div')).$route.name.should.equal('forums')
+      ko.contextFor(testEl.querySelector('section.forums h1')).$route.name.should.equal('forums')
     }).then(function() {
       location.setURL('/forums/1/threads/2')
       return pollUntilPassing(function() {
         should.not.exist(rootContext.$route)
         ko.contextFor(testEl.querySelector('section.forums')).$route.name.should.equal('forums')
-        ko.contextFor(testEl.querySelector('section.forums > div')).$route.name.should.equal('forums')
+        ko.contextFor(testEl.querySelector('section.forums h1')).$route.name.should.equal('forums')
         ko.contextFor(testEl.querySelector('section.thread')).$route.name.should.equal('thread')
         ko.contextFor(testEl.querySelector('section.thread h4')).$route.name.should.equal('thread')
       })

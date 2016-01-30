@@ -80,7 +80,7 @@
           }
           prevRoute = route
 
-          ko.utils.setDomNodeChildren(element, ko.utils.cloneNodes(templates[route.name]))
+          ko.virtualElements.setDomNodeChildren(element, ko.utils.cloneNodes(templates[route.name]))
           var childCtx = bindingContext.createChildContext(route.$root, null, function(context) {
             context.$route = route
           })
@@ -91,7 +91,7 @@
             knockoutCherrytreeMiddleware.activeRoutes.notifySubscribers(activeRoutes().slice())
           }
         } else {
-          ko.utils.setDomNodeChildren(element, [ko.bindingHandlers.routeView.routeLoading.cloneNode(true)])
+          ko.virtualElements.setDomNodeChildren(element, [ko.bindingHandlers.routeView.routeLoading.cloneNode(true)])
           setRouteName('route-loading')
         }
       }, null, { disposeWhenNodeIsRemoved: element }).extend({ rateLimit: 5 })
