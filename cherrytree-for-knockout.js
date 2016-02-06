@@ -91,15 +91,15 @@
           var childCtx = bindingContext.createChildContext(route.$root, null, function(context) {
             context.$route = route
           })
+          setRouteName('route-' + route.name)
           ko.applyBindingsToDescendants(childCtx, element)
 
-          setRouteName('route-' + route.name)
           if (route.$root) {
             knockoutCherrytreeMiddleware.activeRoutes.notifySubscribers(activeRoutes().slice())
           }
         } else {
-          ko.virtualElements.setDomNodeChildren(element, [ko.bindingHandlers.routeView.routeLoading.cloneNode(true)])
           setRouteName('route-loading')
+          ko.virtualElements.setDomNodeChildren(element, [ko.bindingHandlers.routeView.routeLoading.cloneNode(true)])
         }
       }, null, { disposeWhenNodeIsRemoved: element }).extend({ rateLimit: 5 })
 
