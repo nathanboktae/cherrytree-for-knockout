@@ -69,6 +69,55 @@ Below that is a signout button with a click handler, showing that cherrytree-for
 
 When writing your view markup, you can access the route view model at `$route.$root`.
 
+### Resolutions
+
+Routes in complex applications will have dependencies that need to be satisfied in order to build a view model. You can specify these dependencies by specifying a `resolve` object. The keys can be anything, with the values as a function, that given previous resolutions and the transition, return a promise. When the route loads, the functions will be called with the current transition and any resolutions before it. Then the view model constructor will be given the all the resolutions together as the first parameter
+
+```javascript
+var forums = {
+  resolve: {
+    forums: function(resolutions, transition) {
+      return http.get('/forums').then(resp => resp.data)
+    }
+  }
+  template: '<ul class="forums" data-bind="foreach: $route.resolutions().forums">\
+<li><a data-bind="text: $data.name, routeHref: { name: 'forum', params: { forumId: $data.id } }">\
+</li></ul>\
+<!-- ko routeView: true --><!-- /ko -->'
+}
+
+var forum = {
+  path: ':forumId',
+  resolve: {
+    forum: function(resolutions, transition) {
+      var forum = resolutions.forums.find(f => f.id == transition.params.forumId)
+      if (!forum) {
+        // 404
+        return transition.redirectTo('forums')
+      } else {
+        // Always return a promise
+        return Promise.resolve(forum)
+      }
+    },
+    threads: (_, t) => http.get(`/forums/${t.params.forumId}/threads`).then(r => r.data)
+  }
+  template: '<section class="forum"><h2 data-bind="text: forum.title"></h2></section>',
+  viewModel: function(resolutions) {
+    this.forum = resolutions.forum
+    this.forums = resolutions.forums
+    this.threads = resolutions.threads
+  }
+}
+
+route('forums', forums, function() {
+  route('forum', forum)
+})
+```
+
+When `/forums/1` is navigated too, the resolutions for the parent route, resolutions for `forums` will be resolved, in this case it will make an ajax call (the example uses [axios](https://github.com/mzabriskie/axios)) and the results of it, in this case a list of all the forums, will be set as the `forums` property on the resolutions object.
+
+After the forums view model is instantiated and bindings applied, the `routeView` binding it has applies, which will resolve the `forum` route view model, calling both the `threads` and `forum` functions simultaneously. Then both those and the parent `forums` resolution is available to the child view model.
+
 ### Two-way binding of Query Parameters
 
 Keeping all your view state in the query parameter allows users to always refresh the page and get back right where they are at, and share links to other people to see exactly what they are seeing. cherrytree-for-knockout will let you bind to query string parameters easily to support this by giving you an observable that reflects the query string, including defaults.

@@ -13,7 +13,6 @@ describe('CherryTree for Knockout', function() {
     }
 
     forums = {
-      path: 'forums',
       template: '<section class="forums"><h1>Viewing all forums</h1><!-- ko routeView: true --><!-- /ko --></section>',
       viewModel: function() {
         this.forumsViewModel = true
