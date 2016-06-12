@@ -6,6 +6,8 @@
 
 [![SauceLabs Test Status](https://saucelabs.com/browser-matrix/Cherrytree-ko.svg)](https://saucelabs.com/u/Cherrytree-ko)
 
+[Live Interactive Example](http://nathanboktae.github.io/cherrytree-for-knockout/)
+
 ### Overview
 
 As you design your webapp, you will begin to identify workflows and pages in a heirachial fashion. Given the familiar forum domain, you will have a list of forums, then a list of thread in a specific form, then posts in that forum. You may also have an account page which has a private messages section. Each section will have it's own view and logic, and may need data loaded before it can be reached.
