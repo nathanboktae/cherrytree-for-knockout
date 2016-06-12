@@ -1,0 +1,78 @@
+// Modern Urban
+// backg-color = #f8f1E5
+// text-color = #2f3131
+// header-color = #426e86
+// accent-color = #f9ba32
+
+// Grecian Holiday
+backg-color = hsla(32.7, 50.0%, 98.4%, 1.0) //#f4eade
+text-color = #2f496e
+header-color = #2988bc
+accent-color = #ed8c72
+
+open-animation-duration = 250ms
+
+// Subdued and Professional
+// backg-color = hsla(204.9, 71.4%, 96.9%, 1.0)
+// text-color = #2a3132
+// header-color = #763626
+// accent-color = #336b87
+
+
+body
+  font-family Muli
+  color text-color
+  background-color backg-color
+  font-size 14px
+
+main
+  margin 0 5%
+  script + h3, pre + h3
+    margin-top 3em
+
+h1, h2
+  font-family 'Julius Sans One', 'Open Sans', Arial, sans-serif
+  text-transform lowercase
+  color header-color
+
+p, h3, h4
+  font-weight 300
+
+a, a:visited
+  color header-color
+
+
+.demo
+  &, .route-forum, .route-threads-list, .route-thread
+    position relative
+    border 1px solid accent-color //#1d1f21
+    background-color alpha(accent-color, 0.1)
+    padding 10px 20px 10px 10px
+    &::after
+      position absolute
+      top 3px
+      right 0
+      transform translateX(100%) rotate(90deg)
+      transform-origin left top
+  &::after
+    content 'demo-site route'
+  .route-forum::after
+    content 'forum route'
+  .route-threads-list::after
+    content 'threads.list route'
+  .route-thread::after
+    content 'thread route'
+
+  h1, h2
+    font-family 'Open Sans', Arial, sans-serif
+    text-transform none
+    font-weight 300
+
+@media (min-width: 1250px)
+  main article
+    display flex
+    flex-direction row-reverse
+    .demo, pre
+      flex 1 1 50%
+    .demo
+      margin-left 20px

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+  <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible">
+
+  <title>Cherrytree for Knockout - Component-like Heiarchial Routing for Knockout SPAs</title>
+
+  <link href="page.css" rel="stylesheet" type="text/css">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.9.1/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.9.1/languages/javascript.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.9.1/styles/hybrid.min.css">
+<link href='https://fonts.googleapis.com/css?family=Roboto+Mono|Julius+Sans+One|Oxygen:400,300|Muli:400,300|Raleway:400,300' rel='stylesheet' type='text/css'>
+
+  <script>hljs.initHighlightingOnLoad();</script>
+</head>
+<body>
+  <main>
+    <h1>Cherrytree for Knockout</h1>
+    <p><a href="https://github.com/nathanboktae/cherrytree-for-knockout">cherrytree-for-knockout</a> is a way to define your routing in your Knockout-based applications. Inspired by components, it allows you to associate templates and view models in a heirarchial fashion, similar to libraries like <a href="https://angular-ui.github.io/ui-router/">angular-ui-router</a>.</p>
+
+    <h2>Interactive Example</h2>
+    <article>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.3.0/knockout-debug.js"></script>
+      <script src="cherrytree-2.3.1.js"></script>
+      <script src="cherrytree-for-knockout-0.5.2.js"></script>
+
+      <div class="demo" data-bind="routeView: router"></div>
+
+      <script src="bulletin-board.js"></script>
+
+      <pre><code class="javascript">
+var demoSite = {
+  // we mark this abstract as we don't want this page to be
+  // routable directly, only it's children
+  abstract: true,
+  path: '/',
+  // we declare any data that needs to be resolved
+  // or injected into the view model constructor
+  // in the resolve block here. Promises are used as most often this
+  // is where you need to fetch something from the server
+  // before rendering or loading the view.
+  resolve: {
+    forums: function(transition, resolutions) {
+      // query the server for all the forums.
+      // return axios.get(....).then(r =&gt; r.data)
+      return Promise.resolve([{
+        id: 7,
+        name: 'cherrytree-for-knockout demo forum'
+      }])
+    }
+  },
+  // in the real world you would import your templates through
+  // your favorite module system
+  // like `require('text!./forum-templates.html')`
+  // only the root routeView binding needs to be passed the router.
+  // Nested routeViews do not need any options.
+  template: `
+&lt;section class="demo-site"&gt;
+  &lt;h1 data-bind="text: header"&gt;&lt;/h1&gt;
+  &lt;div data-bind="routeView: true"&gt;&lt;/div&gt;
+&lt;/section&gt;`,
+  // view models are called with new, but you can just return an object as seen below.
+  viewModel: function() {
+    this.header = 'A forum board example'
+  }
+},
+
+forumList = {
+  path: '',
+  // the routeHref binding is an easy way to generate a link to another route.
+  template: `
+&lt;ul class="forums" data-bind="foreach: forums"&gt;
+  &lt;li&gt;&lt;a data-bind="routeHref: { name: 'threads.list', params: { forumId: id } },
+    text: name"&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;`,
+  // you can just sreturn the params if there is nothing else to add.
+  viewModel: function(params) {
+   return params
+  }
+},
+
+forum = {
+  // paths are relative extentions of where they are used, for better composability
+  path: ':forumId',
+  abstract: true,
+  template: '\
+&lt;section class="forum"&gt;\
+  &lt;h2 data-bind="text: title"&gt;&lt;/h2&gt;\
+  &lt;div data-bind="routeView: true"&gt;&lt;/div&gt;\
+&lt;/section&gt;',
+  resolve: {
+    forum: (t, r) =&gt; Promise.resolve(r.forums.find(f =&gt; f.id == t.params.forumId)),
+    threads: function(transition, resolutions) {
+      // query the server for the threads in this forum, e.g.
+      // return axios.get(....).then(r =&gt; r.data)
+      return Promise.resolve([{
+        id: 1,
+        name: 'Welcome to the forums!'
+      }, {
+        id: 2,
+        name: 'A newbie question...'
+      }])
+    }
+  },
+  viewModel: function(params, route) {
+    this.title = 'Viewing forum ' + params.forum.name
+  }
+},
+
+threadsList = {
+  // when specifying params to routeHref, you only need to specify additional params
+  template: `
+&lt;ul class="threads" data-bind="foreach: threads"&gt;
+  &lt;li&gt;&lt;a data-bind="routeHref: { name: \'thread\', params: { threadId: id } },
+   text: name"&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;`,
+  viewModel: function(params) {
+    return params
+  }
+},
+
+thread = {
+  resolve: {
+    thread: (tr, r) =&gt; Promise.resolve(
+      r.threads.find(t =&gt; t.id == tr.params.threadId)),
+    posts: function(transition, resolutions) {
+      // Again this would be queried from the server
+      // return axios.get(....).then(r =&gt; r.data)
+      return Promise.resolve([{
+        author: 'Bob',
+        text: 'Sample post'
+      }, {
+        author: 'Jill',
+        text: 'Sample reply'
+      }, {
+        author: 'Bob',
+        text: 'Thank you!'
+      }])
+    }
+  },
+  path: 'threads/:threadId',
+  // if you use routeHref with just a string, it will use that
+  // as the route name and reuse the current params
+  template: `
+    &lt;section class="thread"&gt;
+      &lt;nav&gt;&lt;a data-bind="routeHref: 'threads.list'"&gt;Back to
+      &lt;span data-bind="text: forum.name"&gt;&lt;/span&gt;&lt;/a&gt;&lt;/nav&gt;
+      &lt;h4 data-bind="text: thread.title"&gt;&lt;/h4&gt;
+      &lt;ul data-bind="foreach: posts"&gt;
+        &lt;span class="author" data-bind="text: author"&gt;&lt;/span&gt;
+        &lt;li data-bind="text: text"&gt;&lt;/li&gt;
+      &lt;/ul&gt;
+    &lt;/section&gt;`,
+  viewModel: function(params, route) {
+    Object.assign(this, params)
+  }
+},
+
+router = cherrytree({ pushState: false })
+
+router.map(function(route) {
+  route('demo-site', demoSite, function() {
+    route('forums.list', forumList)
+    route('forum', forum, function() {
+      route('threads.list', threadsList)
+      route('thread', thread)
+    })
+  })
+})
+
+router.use(ko.bindingHandlers.routeView.middleware)
+router.listen()
+
+ko.applyBindings({ router }, document.querySelector('main'))
+</code></pre>
+
+    </article>
+  </main>
+</body>
+</html>
