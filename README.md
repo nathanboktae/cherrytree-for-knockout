@@ -104,7 +104,7 @@ var forum = {
     threads: (_, t) => http.get(`/forums/${t.params.forumId}/threads`).then(r => r.data)
   }
   template: '<section class="forum"><h2 data-bind="text: forum.title"></h2></section>',
-  viewModel: function(resolutions) {
+  viewModel: function(resolutions, route, element) {
     this.forum = resolutions.forum
     this.forums = resolutions.forums
     this.threads = resolutions.threads
@@ -130,7 +130,7 @@ var inbox = {
   query: {
     sort: 'desc'
   },
-  viewModel: function(params) {
+  viewModel: function(params, route, element) {
     this.toggleSort = () => params.sort(params.sort() === 'asc' ? 'desc' : 'asc')
   }
   template: '<div class="inbox">\
