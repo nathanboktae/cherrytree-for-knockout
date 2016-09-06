@@ -101,12 +101,7 @@ describe('CherryTree for Knockout', function() {
 
     testEl = document.createElement('div')
     testEl.setAttribute('data-bind', 'routeView: router')
-    // flush the activeRoutes() from previous tests
-    ko.bindingHandlers.routeView.middleware({
-      routes: [],
-      params: {},
-      query: {}
-    })
+    ko.bindingHandlers.routeView.middleware.reset()
 
     ko.applyBindings({ router: router }, testEl)
     router.listen()

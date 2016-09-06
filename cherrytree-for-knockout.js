@@ -292,5 +292,11 @@
     return activeRoutes().slice()
   })
 
+  knockoutCherrytreeMiddleware.reset = function() {
+    templates = {}
+    viewModels = {}
+    activeRoutes([])
+  }
+
   return knockoutCherrytreeMiddleware
 })
