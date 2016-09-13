@@ -91,7 +91,7 @@ var forums = {
 var forum = {
   path: ':forumId',
   resolve: {
-    forum: function(resolutions, transition) {
+    forum: function(transition, resolutions) {
       var forum = resolutions.forums.find(f => f.id == transition.params.forumId)
       if (!forum) {
         // 404
