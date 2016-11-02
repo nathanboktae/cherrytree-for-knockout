@@ -192,7 +192,7 @@ describe('CherryTree for Knockout', function() {
   it('should call dispose of view models that have a dispose function', function() {
     location.setURL('/forums/1/threads/2')
     return pollUntilPassing(function() {
-        testEl.querySelector('section.forums section.forum section.thread').should.be.ok
+      testEl.querySelector('section.forums section.forum section.thread').should.be.ok
     }).then(function() {
       forums.disposeCount.should.equal(0)
       thread.disposeCount.should.equal(0)
@@ -212,6 +212,40 @@ describe('CherryTree for Knockout', function() {
     }).then(function() {
       forums.disposeCount.should.equal(1)
       thread.disposeCount.should.equal(2)
+    })
+  })
+
+  it('should call onRouteTransition of view models that have that function', function() {
+    var onRouteTransition = sinon.spy()
+    forum.viewModel = function() {
+      this.title = 'Viewing forum {0}'
+      this.onRouteTransition = onRouteTransition
+    }
+
+    location.setURL('/forums/1')
+    return pollUntilPassing(function() {
+      testEl.querySelector('section.forums section.forum').should.be.ok
+    }).then(function() {
+      onRouteTransition.should.have.not.been.called
+      location.setURL('/forums/1/threads/4')
+
+      return pollUntilPassing(function() {
+        testEl.querySelector('section.thread h4').textContent.should.equal('Viewing thread 4')
+      })
+    }).then(function() {
+      onRouteTransition.should.have.been.calledOnce
+      var transition = onRouteTransition.lastCall.args[0]
+
+      transition.then.should.be.instanceof(Function)
+      transition.routes.map(function(r) { return r.name }).join('|').should.deep.equal('forums|threads|thread')
+      location.setURL('/forums/1/threads/2')
+
+      return pollUntilPassing(function() {
+        testEl.querySelector('section.forums section.forum section.thread').should.be.ok
+      })
+    }).then(function() {
+      onRouteTransition.should.have.been.calledTwice
+      onRouteTransition.lastCall.args[0].params.threadId.should.equal('2')
     })
   })
 
