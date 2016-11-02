@@ -120,6 +120,8 @@ When `/forums/1` is navigated too, the resolutions for the parent route, resolut
 
 After the forums view model is instantiated and bindings applied, the `routeView` binding it has applies, which will resolve the `forum` route view model, calling both the `threads` and `forum` functions simultaneously. Then both those and the parent `forums` resolution is available to the child view model.
 
+If you need to be aware of route transitions in a parent view, you can add a `onRouteTransition` function that will be given a transition for transitions where your route is not going away.
+
 ### Two-way binding of Query Parameters
 
 Keeping all your view state in the query parameter allows users to always refresh the page and get back right where they are at, and share links to other people to see exactly what they are seeing. cherrytree-for-knockout will let you bind to query string parameters easily to support this by giving you an observable that reflects the query string, including defaults.

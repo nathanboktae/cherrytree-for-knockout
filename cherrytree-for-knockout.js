@@ -206,7 +206,11 @@
     transitioning = true // router.state.activeTransition isn't set to this one yet
 
     while (routeEqual(activeRoutes()[startIdx], filteredRoutes[startIdx])) {
-      Object.assign(resolutions, activeRoutes()[startIdx].resolutions())
+      var route = activeRoutes()[startIdx]
+      Object.assign(resolutions, route.resolutions())
+      if (route.$root && typeof route.$root.onRouteTransition === 'function') {
+        route.$root.onRouteTransition(transition)
+      }
       startIdx++
     }
 
