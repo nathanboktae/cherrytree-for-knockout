@@ -79,7 +79,9 @@
         if (res) {
           if (viewModels[route.name]) {
             var params = extend({}, res),
-                routeCopy = extend({}, route)
+                routeCopy = extend({
+                  parents: activeRoutes().slice(0, -1).map(function(ar) { return ar.$root }).reverse()
+                }, route)
             delete routeCopy.resolutions
             extend(params, route.queryParams)
 

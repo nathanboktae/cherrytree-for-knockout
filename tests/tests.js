@@ -189,6 +189,36 @@ describe('CherryTree for Knockout', function() {
     })
   })
 
+  it('should expose parent view models to children', function() {
+    router.map(function(route) {
+      route('grandparent', {
+        template: '<div data-bind="routeView: true"></div>'
+      }, function() {
+        route('parent', {
+          template: '<section class="parent"><div data-bind="routeView: true"></div></section>',
+          viewModel: function() {
+            this.sayHi = function(who) { return 'Hello from ' + who }
+          }
+        }, function() {
+          route('child', {
+            template: '<span class="child" data-bind="text: sayHi(\'child\')"><span>',
+            viewModel: function(params, route) {
+              console.dir(route.parents)
+              should.not.exist(route.parents[1])
+              route.parents.length.should.equal(2)
+              this.sayHi = route.parents[0].sayHi
+            }
+          })
+        })
+      })
+    })
+
+    location.setURL('/grandparent/parent/child')
+    return pollUntilPassing(function() {
+      testEl.querySelector('span.child').should.have.text('Hello from child')
+    })
+  })
+
   it('should call dispose of view models that have a dispose function', function() {
     location.setURL('/forums/1/threads/2')
     return pollUntilPassing(function() {
