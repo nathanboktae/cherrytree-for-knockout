@@ -1,6 +1,6 @@
 {
   "name": "cherrytree-for-knockout",
-  "version": "0.5.5",
+  "version": "0.5.6",
   "description": "Hiearchial Routing in Knockout with CherryTree",
   "main": "cherrytree-for-knockout.js",
   "scripts": {
