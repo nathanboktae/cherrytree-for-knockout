@@ -161,7 +161,7 @@
     if (!routes.length) return
 
     var lastRoute = routes[routes.length - 1],
-        query = mapQuery(lastRoute.queryParams, extend({}, lastRoute.query)),
+        query = mapQuery(lastRoute.queryParams, router.options.qs.parse(router.location.getURL().split('?')[1] || '')),
         stringified = router.options.qs.stringify(query)
 
     if (transitioning) return

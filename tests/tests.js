@@ -818,6 +818,9 @@ describe('CherryTree for Knockout', function() {
     it('should replace the current location history when an observable changes, preserving other querystring values', function() {
       location.setURL('/inbox?foo=bar&search=bob')
       return pollUntilPassing(function() { testEl.querySelector('.inbox a.sort').click }).then(function() {
+        // test for other modules outside of cherrytree-for-knockout that maniuplate the query string
+        location.replaceURL('/inbox?foo=bar&baz=1&search=bob')
+
         // unfortunately MemoryLocation#replaceURL calls setURL so we have to disambiguate that case
         var origSetURL = location.setURL.bind(location)
         location.replaceURL = sinon.spy(function (path, options) {
@@ -835,7 +838,7 @@ describe('CherryTree for Knockout', function() {
         }
 
         return pollUntilPassing(function() {
-          location.getURL().should.equal('/inbox?foo=bar&search=bob&sort=asc')
+          location.getURL().should.equal('/inbox?foo=bar&baz=1&search=bob&sort=asc')
           testEl.querySelector('.inbox a.sort').should.have.text('asc')
           location.replaceURL.should.have.been.calledOnce
           location.setURL.should.have.not.been.called
@@ -843,7 +846,7 @@ describe('CherryTree for Knockout', function() {
       }).then(function() {
         inboxParams.search('Jane')
         return pollUntilPassing(function() {
-          location.getURL().should.equal('/inbox?foo=bar&search=Jane&sort=asc')
+          location.getURL().should.equal('/inbox?foo=bar&baz=1&search=Jane&sort=asc')
           testEl.querySelector('.inbox input').value.should.equal('Jane')
         })
       })
